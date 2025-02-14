@@ -1,6 +1,6 @@
 {
-    "name": "Devolfer.Sound.Editor",
-    "rootNamespace": "Devolfer.Sound",
+    "name": "Devolfer.Soma.Editor",
+    "rootNamespace": "Devolfer.Soma",
     "references": [
         "GUID:3fb4bfdcec4de4556954d5ebd6a5f93d"
     ],

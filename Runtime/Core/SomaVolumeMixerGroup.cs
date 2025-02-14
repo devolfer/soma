@@ -2,13 +2,13 @@ using System;
 using UnityEngine;
 using UnityEngine.Audio;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     /// <summary>
     /// Provides various functionality for handling the volume of an <see cref="AudioMixerGroup"/>.
     /// </summary>
     [Serializable]
-    public class MixerVolumeGroup
+    public class SomaVolumeMixerGroup
     {
         [Tooltip("The Audio Mixer of the group.")]
         [SerializeField] private AudioMixer _audioMixer;
@@ -16,7 +16,7 @@ namespace Devolfer.Sound
         [Tooltip(
             "The name of the exposed parameter of the group, e.g. 'VolumeMusic'" +
             "\n\nYou will have to create an Audio Mixer Group and expose a parameter for it in the Editor yourself. " +
-            "Check any online-guides, if unsure how to do this.")]
+            "Check the documentation or any online-guides, if unsure how to do this.")]
         [SerializeField] private string _exposedParameter;
 
         [Tooltip(
@@ -62,7 +62,7 @@ namespace Devolfer.Sound
         /// <param name="audioMixer">The associated Audio Mixer of the group.</param>
         /// <param name="exposedParameter">The name that exposes the Audio Mixer Groups' volume and allows manipulating it.</param>
         /// <param name="volumeSegments">Splits the volume range into the specified amount of segments and allows setting volume in steps.</param>
-        public MixerVolumeGroup(AudioMixer audioMixer, string exposedParameter, int volumeSegments = 1)
+        public SomaVolumeMixerGroup(AudioMixer audioMixer, string exposedParameter, int volumeSegments = 1)
         {
             _audioMixer = audioMixer;
             _exposedParameter = exposedParameter;

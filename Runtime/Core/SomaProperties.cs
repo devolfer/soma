@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     /// <summary>
     /// Mimics the public sound properties found in an <see cref="AudioSource"/>.
     /// </summary>
-    public class SoundProperties
+    public class SomaProperties
     {
         /// <summary>
         /// The default AudioClip to play.
@@ -107,7 +107,7 @@ namespace Devolfer.Sound
         public float MaxDistance;
 
         /// <param name="clip">The clip to be played.</param>
-        public SoundProperties(AudioClip clip)
+        public SomaProperties(AudioClip clip)
         {
             Clip = clip;
             OutputAudioMixerGroup = null;
@@ -131,7 +131,7 @@ namespace Devolfer.Sound
         }
 
         /// <param name="properties">The properties of the original.</param>
-        public SoundProperties(SoundProperties properties)
+        public SomaProperties(SomaProperties properties)
         {
             Clip = properties.Clip;
             OutputAudioMixerGroup = properties.OutputAudioMixerGroup;
@@ -208,7 +208,7 @@ namespace Devolfer.Sound
             audioSource.maxDistance = 500;
         }
 
-        public static implicit operator SoundProperties(AudioSource audioSource) =>
+        public static implicit operator SomaProperties(AudioSource audioSource) =>
             new(audioSource.clip)
             {
                 Clip = audioSource.clip,

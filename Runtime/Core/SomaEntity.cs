@@ -12,31 +12,31 @@ using System.Collections;
 using DynamicTask = System.Threading.Tasks.Task;
 #endif
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     /// <summary>
-    /// An extended wrapper of an <see cref="AudioSource"/> that works together with the <see cref="SoundManager"/>. 
+    /// An extended wrapper of an <see cref="AudioSource"/> that works with <see cref="Soma"/>. 
     /// </summary>
     [AddComponentMenu("")]
-    public class SoundEntity : MonoBehaviour
+    public class SomaEntity : MonoBehaviour
     {
         /// <summary>
-        /// Is the SoundEntity playing?
+        /// Is the entity playing?
         /// </summary>
         public bool Playing { get; private set; }
 
         /// <summary>
-        /// Is the SoundEntity paused?
+        /// Is the entity paused?
         /// </summary>
         public bool Paused { get; private set; }
 
         /// <summary>
-        /// Is the SoundEntity fading?
+        /// Is the entity fading?
         /// </summary>
         public bool Fading { get; private set; }
 
         /// <summary>
-        /// Is the SoundEntity stopping?
+        /// Is the entity stopping?
         /// </summary>
         public bool Stopping { get; private set; }
 
@@ -46,13 +46,13 @@ namespace Devolfer.Sound
         public AudioSource AudioSource => _audioSource;
 
         /// <summary>
-        /// Did the SoundEntity originate from an external AudioSource?
+        /// Did the entity originate from an external AudioSource?
         /// </summary>
-        /// <remarks>This means that the Play method of this entity was initiated via an AudioSource rather than from SoundProperties.</remarks>
+        /// <remarks>This means that the Play method of this entity was initiated via an AudioSource rather than from SomaProperties.</remarks>
         public bool FromExternalAudioSource { get; private set; }
 
         /// <summary>
-        /// The external AudioSource this SoundEntity originated from.
+        /// The external AudioSource this entity originated from.
         /// </summary>
         /// <remarks>Check <see cref="FromExternalAudioSource"/> to foresee a null reference.</remarks>
         public AudioSource ExternalAudioSource => _externalAudioSource;
@@ -64,12 +64,12 @@ namespace Devolfer.Sound
         public Vector3 Position => _transform.position;
 
         /// <summary>
-        /// Whether this entity is following the position of another Transform.
+        /// Whether this entity is following the position of another transform.
         /// </summary>
         public bool HasFollowTarget => _hasFollowTarget;
 
         /// <summary>
-        /// The Transform this entity is following while playing.
+        /// The transform this entity is following while playing.
         /// </summary>
         /// <remarks>Check <see cref="HasFollowTarget"/> to foresee a null reference.</remarks>
         public Transform FollowTarget => _followTarget;
@@ -79,8 +79,8 @@ namespace Devolfer.Sound
         /// </summary>
         public Vector3 FollowTargetOffset => _followTargetOffset;
 
-        private SoundManager _manager;
-        private SoundProperties _properties;
+        private Soma _manager;
+        private SomaProperties _properties;
         private Transform _transform;
         private AudioSource _audioSource;
         private AudioSource _externalAudioSource;
@@ -105,10 +105,10 @@ namespace Devolfer.Sound
         private WaitWhile _waitWhilePaused;
 #endif
 
-        internal void Setup(SoundManager manager)
+        internal void Setup(Soma manager)
         {
             _manager = manager;
-            _properties = new SoundProperties(default(AudioClip));
+            _properties = new SomaProperties(default(AudioClip));
             _transform = transform;
             if (!TryGetComponent(out _audioSource)) _audioSource = gameObject.AddComponent<AudioSource>();
 
@@ -137,13 +137,13 @@ namespace Devolfer.Sound
             TaskHelper.Cancel(ref _stopCts);
         }
 
-        internal SoundEntity Play(SoundProperties properties,
-                                  Transform followTarget = null,
-                                  Vector3 position = default,
-                                  bool fadeIn = false,
-                                  float fadeInDuration = .5f,
-                                  Ease fadeInEase = Ease.Linear,
-                                  Action onComplete = null)
+        internal SomaEntity Play(SomaProperties properties,
+                                 Transform followTarget = null,
+                                 Vector3 position = default,
+                                 bool fadeIn = false,
+                                 float fadeInDuration = .5f,
+                                 Ease fadeInEase = Ease.Linear,
+                                 Action onComplete = null)
         {
             SetProperties(properties, followTarget, position);
 
@@ -162,7 +162,7 @@ namespace Devolfer.Sound
                 {
                     _audioSource.volume = 0;
 
-                    await SoundManager.FadeTask(
+                    await Soma.FadeTask(
                         _audioSource,
                         fadeInDuration,
                         properties.Volume,
@@ -211,13 +211,13 @@ namespace Devolfer.Sound
 #endif
         }
 
-        internal SoundEntity Play(AudioSource audioSource,
-                                  Transform followTarget = null,
-                                  Vector3 position = default,
-                                  bool fadeIn = false,
-                                  float fadeInDuration = .5f,
-                                  Ease fadeInEase = Ease.Linear,
-                                  Action onComplete = null)
+        internal SomaEntity Play(AudioSource audioSource,
+                                 Transform followTarget = null,
+                                 Vector3 position = default,
+                                 bool fadeIn = false,
+                                 float fadeInDuration = .5f,
+                                 Ease fadeInEase = Ease.Linear,
+                                 Action onComplete = null)
         {
             _externalAudioSource = audioSource;
             FromExternalAudioSource = true;
@@ -225,12 +225,12 @@ namespace Devolfer.Sound
             if (audioSource.isPlaying) audioSource.Stop();
             audioSource.enabled = false;
 
-            SoundProperties properties = audioSource;
+            SomaProperties properties = audioSource;
 
             return Play(properties, followTarget, position, fadeIn, fadeInDuration, fadeInEase, onComplete);
         }
 
-        internal async DynamicTask PlayAsync(SoundProperties properties,
+        internal async DynamicTask PlayAsync(SomaProperties properties,
                                              Transform followTarget = null,
                                              Vector3 position = default,
                                              bool fadeIn = false,
@@ -257,7 +257,7 @@ namespace Devolfer.Sound
             {
                 _audioSource.volume = 0;
 
-                await SoundManager.FadeTask(
+                await Soma.FadeTask(
                     _audioSource,
                     fadeInDuration,
                     properties.Volume,
@@ -291,7 +291,7 @@ namespace Devolfer.Sound
             if (audioSource.isPlaying) audioSource.Stop();
             audioSource.enabled = false;
 
-            SoundProperties properties = audioSource;
+            SomaProperties properties = audioSource;
 
             return PlayAsync(properties, followTarget, position, fadeIn, fadeInDuration, fadeInEase, cancellationToken);
         }
@@ -367,7 +367,7 @@ namespace Devolfer.Sound
                 {
                     Stopping = true;
 
-                    await SoundManager.FadeTask(
+                    await Soma.FadeTask(
                         _audioSource,
                         fadeOutDuration,
                         0,
@@ -379,7 +379,7 @@ namespace Devolfer.Sound
                     onComplete?.Invoke();
 
                     Stopping = false;
-                    
+
                     ResetProperties();
                 }
 #else
@@ -459,7 +459,7 @@ namespace Devolfer.Sound
 
                 Stopping = true;
 
-                await SoundManager.FadeTask(
+                await Soma.FadeTask(
                     _audioSource,
                     fadeOutDuration,
                     0,
@@ -495,7 +495,7 @@ namespace Devolfer.Sound
             {
                 Fading = true;
 
-                await SoundManager.FadeTask(
+                await Soma.FadeTask(
                     _audioSource,
                     duration,
                     targetVolume,
@@ -544,7 +544,7 @@ namespace Devolfer.Sound
 
             Fading = true;
 
-            await SoundManager.FadeTask(
+            await Soma.FadeTask(
                 _audioSource,
                 duration,
                 targetVolume,
@@ -555,7 +555,7 @@ namespace Devolfer.Sound
             Fading = false;
         }
 
-        internal void SetProperties(SoundProperties properties, Transform followTarget, Vector3 position)
+        internal void SetProperties(SomaProperties properties, Transform followTarget, Vector3 position)
         {
             _properties = properties;
             _properties.ApplyOn(ref _audioSource);
@@ -586,7 +586,7 @@ namespace Devolfer.Sound
 
             _transform.position = default;
 
-            SoundProperties.ResetOn(ref _audioSource);
+            SomaProperties.ResetOn(ref _audioSource);
 
             _externalAudioSource = null;
             FromExternalAudioSource = false;

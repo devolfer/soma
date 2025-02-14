@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     [CustomPropertyDrawer(typeof(ShowIfAttribute))]
     public class ShowIfDrawer : PropertyDrawer

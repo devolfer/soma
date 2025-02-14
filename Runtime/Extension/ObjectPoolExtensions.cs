@@ -1,6 +1,6 @@
 using UnityEngine.Pool;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     internal static class ObjectPoolExtensions
     {

@@ -2,13 +2,13 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     /// <summary>
-    /// Allows playback of an <see cref="AudioSource"/> through the <see cref="SoundManager"/>.
+    /// Allows playback of an <see cref="AudioSource"/> through <see cref="Soma"/>.
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
-    public class SoundEmitter : MonoBehaviour
+    public class SomaEmitter : MonoBehaviour
     {
         [Header("Configurations")]
         [Space]
@@ -30,11 +30,11 @@ namespace Devolfer.Sound
         }
 
         /// <summary>
-        /// Plays attached <see cref="AudioSource"/> via the <see cref="SoundManager"/> as a <see cref="SoundEntity"/>.
+        /// Plays attached <see cref="AudioSource"/> with <see cref="Soma"/>.
         /// </summary>
         public void Play()
         {
-            SoundManager.Instance.Play(
+            Soma.Instance.Play(
                 _source,
                 followTarget: _play.Follow ? _transform : default,
                 position: _play.Position,
@@ -45,27 +45,27 @@ namespace Devolfer.Sound
         }
 
         /// <summary>
-        /// Pauses attached <see cref="AudioSource"/> via the <see cref="SoundManager"/> as a <see cref="SoundEntity"/>.
+        /// Pauses attached <see cref="AudioSource"/> with <see cref="Soma"/>.
         /// </summary>
         public void Pause()
         {
-            SoundManager.Instance.Pause(_source);
+            Soma.Instance.Pause(_source);
         }
 
         /// <summary>
-        /// Resumes attached <see cref="AudioSource"/> via the <see cref="SoundManager"/> as a <see cref="SoundEntity"/>.
+        /// Resumes attached <see cref="AudioSource"/> with <see cref="Soma"/>.
         /// </summary>
         public void Resume()
         {
-            SoundManager.Instance.Resume(_source);
+            Soma.Instance.Resume(_source);
         }
 
         /// <summary>
-        /// Stops attached <see cref="AudioSource"/> via the <see cref="SoundManager"/> as a <see cref="SoundEntity"/>.
+        /// Stops attached <see cref="AudioSource"/> with <see cref="Soma"/>.
         /// </summary>
         public void Stop()
         {
-            SoundManager.Instance.Stop(
+            Soma.Instance.Stop(
                 _source,
                 fadeOut: _stop.FadeOut,
                 fadeOutDuration: _stop.FadeOutDuration,
@@ -74,12 +74,12 @@ namespace Devolfer.Sound
         }
 
         /// <summary>
-        /// Fades attached <see cref="AudioSource"/> via the <see cref="SoundManager"/> for 2 seconds as a <see cref="SoundEntity"/>.
+        /// Fades attached <see cref="AudioSource"/> with <see cref="Soma"/>.
         /// </summary>
         /// <param name="targetVolume">The target volume the fade will reach at the end.</param>
         public void Fade(float targetVolume)
         {
-            SoundManager.Instance.Fade(
+            Soma.Instance.Fade(
                 _source,
                 targetVolume,
                 _fade.FadeDuration,

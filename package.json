@@ -1,7 +1,7 @@
 {
-  "name": "com.devolfer.sound",
-  "version": "1.0.0",
-  "displayName": "Devolfer Sound",
+  "name": "com.devolfer.soma",
+  "version": "1.1.0",
+  "displayName": "Soma",
   "description": "A lean sound manager that handles sound playback and volume mixing.",
   "unity": "2022.3",
   "author": 

@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     internal static class TaskHelper
     {

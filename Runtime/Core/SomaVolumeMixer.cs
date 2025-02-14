@@ -2,16 +2,16 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     /// <summary>
-    /// Allows volume mixing of the defined <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+    /// Allows volume mixing of the defined <see cref="SomaVolumeMixerGroup"/> through <see cref="Soma"/>.
     /// </summary>
-    public class SoundVolumeMixer : MonoBehaviour
+    public class SomaVolumeMixer : MonoBehaviour
     {
         [Tooltip(
-            "Add the Audio Mixer Group you wish here, that the Sound Manager can change the respective volume of.")]
-        [SerializeField] private MixerVolumeGroup _mixerVolumeGroup;
+            "Add the Audio Mixer Group you wish here, that Soma can change the respective volume of.")]
+        [SerializeField] private SomaVolumeMixerGroup _group;
 
         [Space]
         [SerializeField] private FadeConfiguration _fadeConfiguration;
@@ -29,57 +29,57 @@ namespace Devolfer.Sound
         }
 
         /// <summary>
-        /// Sets volume of set <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+        /// Sets volume of set <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
         /// </summary>
         /// <param name="volume">The volumes' new value.</param>
         public void Set(float volume)
         {
             RegisterIfNeeded();
 
-            SoundManager.Instance.SetMixerGroupVolume(_mixerVolumeGroup.ExposedParameter, volume);
+            Soma.Instance.SetMixerGroupVolume(_group.ExposedParameter, volume);
         }
 
         /// <summary>
-        /// Incrementally increases volume of set <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+        /// Step-wise increases volume of the <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
         /// </summary>
         public void Increase()
         {
             RegisterIfNeeded();
 
-            SoundManager.Instance.IncreaseMixerGroupVolume(_mixerVolumeGroup.ExposedParameter);
+            Soma.Instance.IncreaseMixerGroupVolume(_group.ExposedParameter);
         }
 
         /// <summary>
-        /// Decrementally decreases volume of set <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+        /// Step-wise decreases volume of the <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
         /// </summary>
         public void Decrease()
         {
             RegisterIfNeeded();
 
-            SoundManager.Instance.DecreaseMixerGroupVolume(_mixerVolumeGroup.ExposedParameter);
+            Soma.Instance.DecreaseMixerGroupVolume(_group.ExposedParameter);
         }
 
         /// <summary>
-        /// Mutes/Un-mutes volume of set <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+        /// Mutes/Un-mutes volume of the <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
         /// </summary>
         /// <param name="muted">True = muted, False = unmuted.</param>
         public void Mute(bool muted)
         {
             RegisterIfNeeded();
 
-            SoundManager.Instance.MuteMixerGroupVolume(_mixerVolumeGroup.ExposedParameter, muted);
+            Soma.Instance.MuteMixerGroupVolume(_group.ExposedParameter, muted);
         }
 
         /// <summary>
-        /// Fades volume of set <see cref="MixerVolumeGroup"/> via the <see cref="SoundManager"/>.
+        /// Fades volume of the <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
         /// </summary>
         /// <param name="targetVolume">The target volume reached at the end of the fade.</param>
         public void Fade(float targetVolume)
         {
             RegisterIfNeeded();
 
-            SoundManager.Instance.FadeMixerGroupVolume(
-                _mixerVolumeGroup.ExposedParameter,
+            Soma.Instance.FadeMixerGroupVolume(
+                _group.ExposedParameter,
                 targetVolume,
                 _fadeConfiguration.FadeDuration,
                 ease: _fadeConfiguration.FadeEase,
@@ -91,14 +91,14 @@ namespace Devolfer.Sound
             if (_registered) return;
 
             _registered = true;
-            SoundManager.Instance.RegisterMixerVolumeGroup(_mixerVolumeGroup);
+            Soma.Instance.RegisterMixerVolumeGroup(_group);
         }
 
         private void UnregisterIfNeeded()
         {
             if (!_registered) return;
 
-            SoundManager.Instance.UnregisterMixerVolumeGroup(_mixerVolumeGroup);
+            Soma.Instance.UnregisterMixerVolumeGroup(_group);
         }
 
         [Serializable]

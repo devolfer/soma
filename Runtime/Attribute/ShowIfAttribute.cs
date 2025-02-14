@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Devolfer.Sound
+namespace Devolfer.Soma
 {
     public class ShowIfAttribute : PropertyAttribute
     {
