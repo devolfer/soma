@@ -895,6 +895,9 @@ namespace Devolfer.Soma
 
             if (!playingEntity && !pausedEntity) return;
 
+            if (playingEntity) RemovePlaying(entity);
+            if (pausedEntity) RemovePaused(entity);
+            
             AddStopping(entity);
             entity.Stop(fadeOut, fadeOutDuration, fadeOutEase, OnStopComplete);
 
@@ -902,8 +905,6 @@ namespace Devolfer.Soma
 
             void OnStopComplete()
             {
-                if (playingEntity) RemovePlaying(entity);
-                if (pausedEntity) RemovePaused(entity);
                 RemoveStopping(entity);
 
                 _entityPool.Release(entity);
@@ -936,6 +937,9 @@ namespace Devolfer.Soma
 
             if (!playingAudioSource && !pausedAudioSource) return;
 
+            if (playingAudioSource) RemovePlaying(entityPlaying);
+            if (pausedAudioSource) RemovePaused(entityPaused);
+            
             SomaEntity entity = entityPlaying != null ? entityPlaying : entityPaused;
             AddStopping(entity);
             entity.Stop(fadeOut, fadeOutDuration, fadeOutEase, OnStopComplete);
@@ -944,8 +948,6 @@ namespace Devolfer.Soma
 
             void OnStopComplete()
             {
-                if (playingAudioSource) RemovePlaying(entity);
-                if (pausedAudioSource) RemovePaused(entity);
                 RemoveStopping(entity);
 
                 _entityPool.Release(entity);
@@ -978,13 +980,14 @@ namespace Devolfer.Soma
             bool pausedEntity = HasPaused(entity);
 
             if (!playingEntity && !pausedEntity) return;
+            
+            if (playingEntity) RemovePlaying(entity);
+            if (pausedEntity) RemovePaused(entity);
 
             AddStopping(entity);
 
             await entity.StopAsync(fadeOut, fadeOutDuration, fadeOutEase, cancellationToken);
-
-            if (playingEntity) RemovePlaying(entity);
-            if (pausedEntity) RemovePaused(entity);
+            
             RemoveStopping(entity);
 
             _entityPool.Release(entity);
@@ -1014,14 +1017,15 @@ namespace Devolfer.Soma
             bool pausedAudioSource = HasPaused(audioSource, out SomaEntity entityPaused);
 
             if (!playingAudioSource && !pausedAudioSource) return;
+            
+            if (playingAudioSource) RemovePlaying(entityPlaying);
+            if (pausedAudioSource) RemovePaused(entityPaused);
 
             SomaEntity entity = entityPlaying != null ? entityPlaying : entityPaused;
             AddStopping(entity);
 
             await entity.StopAsync(fadeOut, fadeOutDuration, fadeOutEase, cancellationToken);
-
-            if (playingAudioSource) RemovePlaying(entity);
-            if (pausedAudioSource) RemovePaused(entity);
+            
             RemoveStopping(entity);
 
             _entityPool.Release(entity);
@@ -1728,7 +1732,15 @@ namespace Devolfer.Soma
 
         #endregion
 
-        #region Dictionaries
+        #region Management
+
+        private void LateUpdate()
+        {
+            if (!_setup) return;
+            
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesPlaying) entity.ProcessTargetFollowing();
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesStopping) entity.ProcessTargetFollowing();
+        }
 
         private static void AddToDictionaries(SomaEntity entity,
                                               ref Dictionary<SomaEntity, AudioSource> entityDictionary,

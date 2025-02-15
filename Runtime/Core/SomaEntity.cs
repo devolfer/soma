@@ -125,14 +125,12 @@ namespace Devolfer.Soma
             _setup = true;
         }
 
-        private void LateUpdate()
+        internal void ProcessTargetFollowing()
         {
             if (!_setup) return;
+            if (!_hasFollowTarget) return;
 
-            if (_hasFollowTarget && Playing)
-            {
-                _transform.position = _followTarget.position + _followTargetOffset;
-            }
+            _transform.position = _followTarget.TransformPoint(_followTargetOffset);
         }
 
         private void OnDestroy()

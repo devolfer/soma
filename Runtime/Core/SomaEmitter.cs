@@ -96,7 +96,7 @@ namespace Devolfer.Soma
             public bool Follow = true;
 
             [Tooltip(
-                "Either the global position or, when following, the position offset at which the sound is played.")]
+                "Either the global position or, when following, the relative position offset at which the sound is played.")]
             public Vector3 Position;
 
             [Tooltip("Should the sound fade in when playing?")]
