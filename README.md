@@ -1,14 +1,14 @@
-# Devolfer Sound
+# Soma
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
 This package provides a lean sound manager for a Unity project.
 * Play/Pause/Resume/Fade/Stop individual or all sounds
 * Set/Mute/Fade volume of Audio Mixers
-* Efficiently uses object pooling under the hood
-* Access anywhere from code (as persistent singleton)
+* Uses object pooling under the hood
+* Easily access anywhere in code (as persistent singleton)
 * Async/Await support (including [UniTask](https://github.com/Cysharp/UniTask)!)
-* Sound Emitter & Sound Volume Mixer components for non-coders
+* Emitter & Volume Mixer components for non-coders
 
 ## Table of Contents
 * [Getting started](#getting-started)
@@ -27,19 +27,19 @@ This package provides a lean sound manager for a Unity project.
   * [Mute and Unmute Volume](#mute-and-unmute-volume)
   * [Fade Volume](#fade-volume)
 * [Available Components](#available-components)
-  * [Sound Emitter](#sound-emitter)
-  * [Sound Volume Mixer](#sound-volume-mixer)
+  * [Soma Emitter](#soma-emitter)
+  * [Soma Volume Mixer](#soma-volume-mixer)
 * [License](#license)
 
 ## Getting started
 ### Installation
-Through the Package Manager in the Editor as a git package: `https://github.com/devolfer/devolfer-sound.git`.   
+Through the Package Manager in the Editor as a git package: `https://github.com/devolfer/soma.git`.   
 The Package Manager can be opened under `Window -> Package Manager`.
 
 <img width="640" alt="add-git-package-0" src="https://github.com/user-attachments/assets/e1e4ab90-fdc4-40e2-9768-3b23dc69f12b">
 <img width="640" alt="add-git-package-1" src="https://github.com/user-attachments/assets/96e8afc2-e9a2-4861-b4ae-78e96450062a">
 
-Or as `"com.devolfer.sound": "https://github.com/devolfer/devolfer-sound.git"` in `Packages/manifest.json`.
+Or as `"com.devolfer.soma": "https://github.com/devolfer/soma.git"` in `Packages/manifest.json`.
 
 Manual import into a folder is of course also possible.
 
@@ -49,7 +49,7 @@ Even if async/await workflow is not intended to be used, it is very favourable t
 
 The installation guide can be found in the [Official UniTask Repo](https://github.com/Cysharp/UniTask).   
 
-Once installed, all code of this package will automatically compile using `UniTask` instead of standard `C# Task`!   
+Once installed, all async code of this package will automatically compile using `UniTask` instead of standard `C# Task`!   
 This will potentially break any existing asynchronous code usage, that was initially expecting a C# Task return value.
 
 ### Code Hints
@@ -67,7 +67,7 @@ If in doubt, the following sections aim to provide as clear explanations and exa
 Playing a sound is as simple as calling the `Play` method and passing an `AudioClip` to it.
 
 ```csharp
-using Devolfer.Sound;
+using Devolfer.Soma;
 using UnityEngine;
 
 public class YourBehaviour : MonoBehaviour
@@ -77,11 +77,11 @@ public class YourBehaviour : MonoBehaviour
     
     private void YourMethod()
     {
-        // Plays clip through the SoundManager instance
-        SoundManager.Instance.Play(audioClip);
+        // Plays clip through the Soma instance
+        Soma.Play(audioClip);
         
         // *** There is no need for an AudioSource component.
-        // The SoundManager will get a SoundEntity instance from its pool, 
+        // Soma will retrieve a SomaEntity instance from its pool, 
         // play the clip through it, and then return it back to the pool. ***
     }
 }
@@ -91,7 +91,7 @@ To alter the behaviour, there are various optional parameters that can be passed
 
 ```csharp
 // Plays clip at world position
-SoundManager.Instance.Play(audioClip, position: new Vector3(0, 4, 2));
+Soma.Play(audioClip, position: new Vector3(0, 4, 2));
 
 // *** The above call is very similar to Unitys 'AudioSource.PlayClipAtPoint()' method,
 // however, there is no overhead of instantiating & destroying a GameObject involved! ***  
@@ -100,16 +100,16 @@ SoundManager.Instance.Play(audioClip, position: new Vector3(0, 4, 2));
 [SerializeField] private Transform transformToFollow;
 
 // Plays clip at local position while following 'transformToFollow'
-SoundManager.Instance.Play(audioClip, followTarget: transformToFollow, position: new Vector3(0, 4, 2));
+Soma.Play(audioClip, followTarget: transformToFollow, position: new Vector3(0, 4, 2));
 
 // Plays clip with fade in of 1 second and applies InSine easing
-SoundManager.Instance.Play(audioClip, fadeIn: true, fadeInDuration: 1f, fadeInEase = Ease.InSine);
+Soma.Play(audioClip, fadeIn: true, fadeInDuration: 1f, fadeInEase = Ease.InSine);
 
 // Plays clip and prints log statement at completion
-SoundManager.Instance.Play(audioClip, onComplete: () => Debug.Log("Yeah, this sound finished playing!"));
+Soma.Play(audioClip, onComplete: () => Debug.Log("Yeah, this sound finished playing!"));
 ```
 
-For any further custom sound settings, there is the `SoundProperties` class.   
+For any further custom sound settings, there is the `SomaProperties` class.   
 It mimics the public properties of an `AudioSource` and allows control over e.g. volume & pitch.
 
 ```csharp
@@ -122,10 +122,10 @@ int[] pentatonicSemitones = { 0, 2, 4, 7, 9 };
 int amount = pentatonicSemitones[UnityEngine.Random.Range(0, pentatonicSemitones.Length)];
 for (int i = 0; i < amount; i++) pitch *= 1.059463f;
 
-// Plays via SoundProperties with clip, volume & pitch
-SoundManager.Instance.Play(new SoundProperties(audioClip) { Volume = volume, Pitch = pitch });
+// Plays via SomaProperties with clip, volume & pitch
+Soma.Play(new SomaProperties(audioClip) { Volume = volume, Pitch = pitch });
 
-// *** Passing new SoundProperties like above is just for demonstration.
+// *** Passing new SomaProperties like above is just for demonstration.
 // When possible those should be cached & reused! ***
 ```
 
@@ -136,12 +136,12 @@ It is also no problem to pass an `AudioSource` directly.
 [SerializeField] private AudioSource audioSource;
 
 // Plays with 'audioSource' properties
-SoundManager.Instance.Play(audioSource);
+Soma.Play(audioSource);
 
 // Plays with 'audioSource' properties, but this time looped
-SoundManager.Instance.Play(new SoundProperties(audioSource) { Loop = true });
+Soma.Play(new SomaProperties(audioSource) { Loop = true });
 
-// *** The call above passes an implicit SoundProperties copy of the AudioSource properties.
+// *** The call above passes an implicit SomaProperties copy of the AudioSource properties.
 // This can be useful for selectively changing AudioSource properties at call of Play. ***
 ```
 
@@ -156,21 +156,21 @@ private async void YourAsyncMethod()
     try
     {
         // Plays clip with default fade in
-        await SoundManager.Instance.PlayAsync(audioClip, fadeIn: true);
+        await Soma.PlayAsync(audioClip, fadeIn: true);
             
         // Plays clip with cancellation token 'someCancellationToken'
-        await SoundManager.Instance.PlayAsync(audioClip, cancellationToken: someCancellationToken);
+        await Soma.PlayAsync(audioClip, cancellationToken: someCancellationToken);
         
-        // *** Using tokens is optional, as each playing SoundEntity handles 
+        // *** Using tokens is optional, as each playing SomaEntity handles 
         // its own cancellation when needed. ***
 
-        // Plays clip with SoundProperties at half volume & passes 'someCancellationToken'
-        await SoundManager.Instance.PlayAsync(
-            new SoundProperties(audioClip) { Volume = .5f },
+        // Plays clip with SomaProperties at half volume & passes 'someCancellationToken'
+        await Soma.PlayAsync(
+            new SomaProperties(audioClip) { Volume = .5f },
             cancellationToken: someCancellationToken);
             
         // Plays with 'audioSource' properties
-        await SoundManager.Instance.PlayAsync(audioSource);
+        await Soma.PlayAsync(audioSource);
             
         Debug.Log("Awaiting is done. All sounds have finished playing one after another!");
     }
@@ -182,94 +182,94 @@ private async void YourAsyncMethod()
 ```
 
 ### Pause and Resume
-Pausing and resuming an individual sound requires to pass a `SoundEntity` or an `AudioSource`.   
-The `Play` method returns a `SoundEntity`, `PlayAsync` optionally outs a `SoundEntity`.
+Pausing and resuming an individual sound requires to pass a `SomaEntity` or an `AudioSource`.   
+The `Play` method returns a `SomaEntity`, `PlayAsync` optionally outs a `SomaEntity`.
 
 ```csharp
-// Plays clip & caches playing SoundEntity into variable 'soundEntity'
-SoundEntity soundEntity = SoundManager.Instance.Play(audioClip);
+// Plays clip & caches playing SomaEntity into variable 'entity'
+SomaEntity entity = Soma.Play(audioClip);
 
-// Plays clip async & outs playing SoundEntity into variable 'soundEntity'
-await SoundManager.Instance.PlayAsync(out SoundEntity soundEntity, audioClip);
+// Plays clip async & outs playing SomaEntity into variable 'entity'
+await Soma.PlayAsync(out SomaEntity entity, audioClip);
 
 // Doing the above with 'audioSource' properties
-SoundManager.Instance.Play(audioSource);
-await SoundManager.Instance.PlayAsync(audioSource);
+Soma.Play(audioSource);
+await Soma.PlayAsync(audioSource);
 
-// *** When calling Play with an AudioSource it is not mandatory to cache the playing SoundEntity.
-// The SoundManager will cache both in a Dictionary entry for later easy access! ***
+// *** When calling Play with an AudioSource it is not mandatory to cache the playing SomaEntity.
+// Soma will cache both in a Dictionary for later easy access! ***
 ```
 
 Calling `Pause` and `Resume` can then be called on any playing sound.
 
 ```csharp
-// Pauses & Resumes cached/outed 'soundEntity'
-SoundManager.Instance.Pause(soundEntity);
-SoundManager.Instance.Resume(soundEntity);
+// Pauses & Resumes cached/outed 'entity'
+Soma.Pause(entity);
+Soma.Resume(entity);
 
 // Pauses & Resumes via original `audioSource`
-SoundManager.Instance.Pause(audioSource);
-SoundManager.Instance.Resume(audioSource);
+Soma.Pause(audioSource);
+Soma.Resume(audioSource);
 
 // Pauses & Resumes all sounds
-SoundManager.Instance.PauseAll();
-SoundManager.Instance.ResumeAll();
+Soma.PauseAll();
+Soma.ResumeAll();
 
 // *** A sound, that is in the process of stopping, cannot be paused! ***
 ```
 
 ### Stop
-Stopping also requires to pass a `SoundEntity` or an `AudioSource`.
+Stopping also requires to pass a `SomaEntity` or an `AudioSource`.
 
 ```csharp
-// Stops both cached 'soundEntity' & 'audioSource'
-SoundManager.Instance.Stop(soundEntity);
-SoundManager.Instance.Stop(audioSource);
+// Stops both cached 'entity' & 'audioSource'
+Soma.Stop(entity);
+Soma.Stop(audioSource);
 
 // Same as above as async call
-await SoundManager.Instance.StopAsync(soundEntity);
-await SoundManager.Instance.StopAsync(audioSource);
+await Soma.StopAsync(entity);
+await Soma.StopAsync(audioSource);
 
 // Stops all sounds
-SoundManager.Instance.StopAll();
-await SoundManager.Instance.StopAllAsync();
+Soma.StopAll();
+await Soma.StopAllAsync();
 ```
 
 By default, the `Stop` and `StopAsync` methods fade out when stopping. This can be individually set.
 
 ```csharp
-// Stops cached 'soundEntity' with long fadeOut duration
-SoundManager.Instance.Stop(
-    soundEntity, 
+// Stops cached 'entity' with long fadeOut duration
+Soma.Stop(
+    entity, 
     fadeOutDuration: 3f, 
     fadeOutEase: Ease.OutSine, 
     onComplete: () => Debug.Log("Stopped sound after long fade out."));
 
-// Stops cached 'soundEntity' with no fade out
-SoundManager.Instance.Stop(soundEntity, fadeOut: false);
+// Stops cached 'entity' with no fade out
+Soma.Stop(entity, fadeOut: false);
 
 // Stops 'audioSource' async with default fade out
-await SoundManager.Instance.StopAsync(audioSource, cancellationToken: someCancellationToken);
+await Soma.StopAsync(audioSource, cancellationToken: someCancellationToken);
 ```
 
 ### Fade
 For fading a sound, it is mandatory to set a `targetVolume` and `duration`.
 
 ```csharp
-// Fades cached 'soundEntity' to volume 0.2 over 1 second
-SoundManager.Instance.Fade(soundEntity, .2f, 1f);
+// Fades cached 'entity' to volume 0.2 over 1 second
+Soma.Fade(entity, .2f, 1f);
 
-// Pauses cached 'soundEntity' & then fades it to full volume with InExpo easing over 0.5 seconds
-SoundManager.Instance.Pause(soundEntity);
-SoundManager.Instance.Fade(
-    soundEntity, 
+// Pauses cached 'entity' & then fades it to full volume with InExpo easing over 0.5 seconds
+Soma.Pause(entity);
+Soma.Fade(
+    entity, 
     1f, 
     .5f, 
     ease: Ease.InExpo, 
     onComplete: () => Debug.Log("Quickly faded in paused sound again!"));
 
 // Fades 'audioSource' to volume 0.5 with default ease over 2 seconds
-await SoundManager.Instance.FadeAsync(audioSource, .5f, 2f, cancellationToken: someCancellationToken);
+await Soma.FadeAsync(audioSource, .5f, 2f, cancellationToken: someCancellationToken);
 
 // *** Stopping sounds cannot be faded and paused sounds will automatically resume when faded! ***    
 ```
@@ -278,13 +278,13 @@ The `CrossFade` and `CrossFadeAsync` methods provide ways to simultaneously fade
 This means, an existing sound will be stopped fading out, while a new one will play fading in.  
 
 ```csharp
-// Cross-fades cached 'soundEntity' & new clip over 1 second
-SoundEntity newSoundEntity = SoundManager.Instance.CrossFade(1f, soundEntity, new SoundProperties(audioClip));
+// Cross-fades cached 'entity' & new clip over 1 second
+SomaEntity newEntity = Soma.CrossFade(1f, entity, new SomaProperties(audioClip));
 
 // Async cross-fades two sound entities & outs the new one
-await SoundManager.Instance.CrossFadeAsync(out newSoundEntity, 1f, soundEntity, new SoundProperties(audioClip));
+await Soma.CrossFadeAsync(out newEntity, 1f, entity, new SomaProperties(audioClip));
 
-// *** The returned SoundEntity will be the newly playing one 
+// *** The returned SomaEntity will be the newly playing one 
 // and it will always fade in to full volume. ***
 ```
 
@@ -315,7 +315,7 @@ Selecting the `Master` group and right-clicking on the volume property in the in
 Double-clicking the `Audio Mixer` asset or navigating to `Window -> Audio -> Audio Mixer` will open the `Audio Mixer Window`.   
 Once opened, the name of the parameter can be changed under the `Exposed Parameters` dropdown by double-clicking it.   
 
-***This is an important step! The name given here, is how the group will be globally accessible by the `SoundManager`.***
+***This is an important step! The name given here, is how the group will be globally accessible by `Soma`.***
 
 <img width="240" alt="rename-mixer-parameter" src="https://github.com/user-attachments/assets/69fd3ca6-0596-46f0-b7d8-6f418c857597">
 
@@ -327,33 +327,33 @@ Any other custom groups must be added under the `Groups` section by clicking the
 ***Just like before, exposing the volume parameters manually is unfortunately a mandatory step!***
 
 ### Register and Unregister Volume Group
-To let the `SoundManager` know, which `AudioMixer` volume groups it should manage, they have to be registered and unregistered.   
+To let `Soma` know, which `AudioMixer` volume groups it should manage, they have to be registered and unregistered.   
 This can be done via scripting or the Editor.
 
-It is straightforward by code, however the methods expect an instance of type `MixerVolumeGroup`.   
+It is straightforward by code, however the methods expect an instance of type `SomaVolumeMixerGroup`.   
 This is a custom class that provides various functionality for handling a volume group in an `AudioMixer`.
 
 ```csharp
 // Injects AudioMixer asset via Editor Inspector
 [SerializeField] private AudioMixer audioMixer;
 
-// Creates a MixerVolumeGroup instance with 'audioMixer' & the pre-setup exposed parameter 'VolumeMusic'
-MixerVolumeGroup mixerVolumeGroup = new(audioMixer, "VolumeMusic", volumeSegments: 10);
+// Creates a SomaVolumeMixerGroup instance with 'audioMixer' & the pre-setup exposed parameter 'VolumeMusic'
+SomaVolumeMixerGroup group = new(audioMixer, "VolumeMusic", volumeSegments: 10);
 
 // *** Volume segments can optionally be defined for allowing incremental/decremental volume change.
 // This can e.g. be useful in segmented UI controls. *** 
 
-// Registers & Unregisters 'mixerVolumeGroup' with & from the SoundManager
-SoundManager.Instance.RegisterMixerVolumeGroup(mixerVolumeGroup);
-SoundManager.Instance.UnregisterMixerVolumeGroup(mixerVolumeGroup);
+// Registers & Unregisters 'group' with & from Soma
+Soma.RegisterMixerVolumeGroup(group);
+Soma.UnregisterMixerVolumeGroup(group);
 
 // *** It is important, that the exposed parameter exists in the referenced AudioMixer.
 // Otherwise an error will be thrown! ***
 ```
 ---
-Registering via Editor can be done through the [Sound Volume Mixer](#sound-volume-mixer) component or the `SoundManager` in the scene.   
+Registering via Editor can be done through the [Soma Volume Mixer](#soma-volume-mixer) component or the `Soma` instance in the scene.   
 
-For the latter, right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Sound Manager` will create an instance.   
+For the latter, right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Soma` will create an instance.   
 
 <img width="362" alt="add-sound-manager" src="https://github.com/user-attachments/assets/a446a32f-6e96-4656-b78a-e9577d76cea9">
 
@@ -361,7 +361,7 @@ Any groups can then be added in the list of `Mixer Volume Groups Default`.
 
 <img width="534" alt="add-mixer-volume-group-inspector" src="https://github.com/user-attachments/assets/929c0555-7f7c-4bb8-8912-5c965358e8fa">
 
-*If left empty, the `SoundManager` will register and unregister the groups contained in the `AudioMixerDefault` asset automatically!*
+*If left empty, `Soma` will register and unregister the groups contained in the `AudioMixerDefault` asset automatically!*
 
 ### Set Volume
 Setting a volume can only be done in percentage values (range 0 - 1).   
@@ -369,47 +369,47 @@ Increasing and decreasing in steps requires the volume segments of the group to 
 
 ```csharp
 // Sets volume of 'VolumeMusic' group to 0.5
-SoundManager.Instance.SetMixerGroupVolume("VolumeMusic", .5f);
+Soma.SetMixerGroupVolume("VolumeMusic", .5f);
 
 // Incrementally sets volume of 'VolumeMusic' group
 // With volumeSegments = 10, this will result in a volume of 0.6
-SoundManager.Instance.IncreaseMixerGroupVolume("VolumeMusic");
+Soma.IncreaseMixerGroupVolume("VolumeMusic");
 
 // Decrementally sets volume of 'VolumeMusic' group
 // With volumeSegments = 10, this will result in a volume of 0.5 again
-SoundManager.Instance.DecreaseMixerGroupVolume("VolumeMusic");
+Soma.DecreaseMixerGroupVolume("VolumeMusic");
 ```
 
 ### Mute and Unmute Volume
-Muting and unmuting sets the volume to a value of 0 or restores to the previously stored unmuted value.
+Muting and unmuting sets the volume to a value of 0 or restores the previously stored unmuted value.
 
 ```csharp
 // Sets volume of 'VolumeMusic' group to 0.8
-SoundManager.Instance.SetMixerGroupVolume("VolumeMusic", .8f);
+Soma.SetMixerGroupVolume("VolumeMusic", .8f);
 
 // Mutes volume of 'VolumeMusic' group
-SoundManager.Instance.MuteMixerGroupVolume("VolumeMusic", true);
+Soma.MuteMixerGroupVolume("VolumeMusic", true);
 
 // Equivalent to above
-SoundManager.Instance.SetMixerGroupVolume("VolumeMusic", 0f);
+Soma.SetMixerGroupVolume("VolumeMusic", 0f);
 
 // Unmutes volume of 'VolumeMusic' group back to value 0.8
-SoundManager.Instance.MuteMixerGroupVolume("VolumeMusic", false);
+Soma.MuteMixerGroupVolume("VolumeMusic", false);
 ```
 
 ### Fade Volume
-Fading requires to set a `targetVolume` and `duration`.
+Fading requires a `targetVolume` and `duration`.
 
 ```csharp
 // Fades volume of 'VolumeMusic' group to 0 over 2 seconds
-SoundManager.Instance.FadeMixerGroupVolume("VolumeMusic", 0f, 2f);
+Soma.FadeMixerGroupVolume("VolumeMusic", 0f, 2f);
 
 // Same as above but with InOutCubic easing & onComplete callback
-SoundManager.Instance.FadeMixerGroupVolume(
+Soma.FadeMixerGroupVolume(
     "VolumeMusic", 0f, 2f, ease: InOutCubic, onComplete: () => Debug.Log("Volume was smoothly muted!"));
 
 // Similar to above as async call
-await SoundManager.Instance.FadeMixerGroupVolumeAsync(
+await Soma.FadeMixerGroupVolumeAsync(
     "VolumeMusic", 0f, 2f, ease: InOutCubic, cancellationToken: someCancellationToken);
 
 Debug.Log("Volume was smoothly muted!")
@@ -420,18 +420,18 @@ It will fade out the first group to a volume of 0 and fade in the other to 1.
 
 ```csharp
 // Fades volume of 'VolumeMusic' out & fades in 'VolumeDialog' over 1 second
-SoundManager.Instance.CrossFadeMixerGroupVolumes("VolumeMusic", "VolumeDialog", 1f);
+Soma.CrossFadeMixerGroupVolumes("VolumeMusic", "VolumeDialog", 1f);
 
 // Same as above as async call
-await SoundManager.Instance.CrossFadeMixerGroupVolumesAsync("VolumeMusic", "VolumeDialog", 1f);
+await Soma.CrossFadeMixerGroupVolumesAsync("VolumeMusic", "VolumeDialog", 1f);
 ```
 
 For any finer controlled cross-fading, it is recommended to call multiple fades simultaneously.
 
 ## Available Components
-### Sound Emitter
-The `Sound Emitter` component is a simple way of adding a sound, that is handled by the `Sound Manager`.   
-It can be attached to any gameObject or created by right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Sound Emitter`.
+### Soma Emitter
+The `Soma Emitter` component is a simple way of adding a sound, that is handled by `Soma`.   
+It can be attached to any gameObject or created by right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Soma Emitter`.
 
 <img width="362" alt="add-sound-emitter" src="https://github.com/user-attachments/assets/8828558b-41a5-4e56-ad3d-6c3d3785e2e1">
 
@@ -453,10 +453,10 @@ The image below shows an example usage of a `Button` component and how one could
 
 <img width="580" alt="sound-emitter-public-methods" src="https://github.com/user-attachments/assets/da049164-8c4f-4b8b-b5e8-61f0c3aef5da">
 
-### Sound Volume Mixer
-A `Sound Volume Mixer` simplifies volume mixing of an `Audio Mixer` group and uses the `Sound Manager` for it.   
+### Soma Volume Mixer
+A `Soma Volume Mixer` simplifies volume mixing of an `Audio Mixer` group and uses the `Soma` for it.   
 This component can be added to any GameObject in the scene.   
-Or by creating it via right-clicking in the `Hierarchy` or using the `GameObject` menu, then choosing `Audio -> Sound Volume Mixer`.
+Or by creating it via right-clicking in the `Hierarchy` or using the `GameObject` menu, then choosing `Audio -> Soma Volume Mixer`.
 
 <img width="363" alt="add-sound-volume-mixer" src="https://github.com/user-attachments/assets/eca71cd0-d8e8-44b7-ae38-e01374ed1014">
 
