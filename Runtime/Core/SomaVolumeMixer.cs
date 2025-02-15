@@ -9,8 +9,7 @@ namespace Devolfer.Soma
     /// </summary>
     public class SomaVolumeMixer : MonoBehaviour
     {
-        [Tooltip(
-            "Add the Audio Mixer Group you wish here, that Soma can change the respective volume of.")]
+        [Tooltip("Add the Audio Mixer Group you wish here, that Soma can change the respective volume of.")]
         [SerializeField] private SomaVolumeMixerGroup _group;
 
         [Space]
@@ -36,7 +35,7 @@ namespace Devolfer.Soma
         {
             RegisterIfNeeded();
 
-            Soma.Instance.SetMixerGroupVolume(_group.ExposedParameter, volume);
+            Soma.SetMixerGroupVolume(_group.ExposedParameter, volume);
         }
 
         /// <summary>
@@ -46,7 +45,7 @@ namespace Devolfer.Soma
         {
             RegisterIfNeeded();
 
-            Soma.Instance.IncreaseMixerGroupVolume(_group.ExposedParameter);
+            Soma.IncreaseMixerGroupVolume(_group.ExposedParameter);
         }
 
         /// <summary>
@@ -56,7 +55,7 @@ namespace Devolfer.Soma
         {
             RegisterIfNeeded();
 
-            Soma.Instance.DecreaseMixerGroupVolume(_group.ExposedParameter);
+            Soma.DecreaseMixerGroupVolume(_group.ExposedParameter);
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Devolfer.Soma
         {
             RegisterIfNeeded();
 
-            Soma.Instance.MuteMixerGroupVolume(_group.ExposedParameter, muted);
+            Soma.MuteMixerGroupVolume(_group.ExposedParameter, muted);
         }
 
         /// <summary>
@@ -78,7 +77,7 @@ namespace Devolfer.Soma
         {
             RegisterIfNeeded();
 
-            Soma.Instance.FadeMixerGroupVolume(
+            Soma.FadeMixerGroupVolume(
                 _group.ExposedParameter,
                 targetVolume,
                 _fadeConfiguration.FadeDuration,
@@ -91,14 +90,14 @@ namespace Devolfer.Soma
             if (_registered) return;
 
             _registered = true;
-            Soma.Instance.RegisterMixerVolumeGroup(_group);
+            Soma.RegisterMixerVolumeGroup(_group);
         }
 
         private void UnregisterIfNeeded()
         {
             if (!_registered) return;
 
-            Soma.Instance.UnregisterMixerVolumeGroup(_group);
+            Soma.UnregisterMixerVolumeGroup(_group);
         }
 
         [Serializable]

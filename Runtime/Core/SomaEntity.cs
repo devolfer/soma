@@ -39,6 +39,11 @@ namespace Devolfer.Soma
         /// Is the entity stopping?
         /// </summary>
         public bool Stopping { get; private set; }
+        
+        /// <summary>
+        /// The properties applied on this entity.
+        /// </summary>
+        public SomaProperties Properties => _properties;
 
         /// <summary>
         /// The AudioSource used for playing.
@@ -78,7 +83,7 @@ namespace Devolfer.Soma
         /// The position offset relative to the <see cref="FollowTarget"/>.
         /// </summary>
         public Vector3 FollowTargetOffset => _followTargetOffset;
-
+        
         private Soma _manager;
         private SomaProperties _properties;
         private Transform _transform;
@@ -175,7 +180,7 @@ namespace Devolfer.Soma
 
                 onComplete?.Invoke();
 
-                await _manager.StopAsync(this, false, cancellationToken: cancellationToken);
+                await _manager.StopAsync_Entity(this, false, cancellationToken: cancellationToken);
 
                 Playing = false;
             }
@@ -192,7 +197,7 @@ namespace Devolfer.Soma
                 if (fadeIn)
                 {
                     _audioSource.volume = 0;
-                    yield return SoundManager.FadeRoutine(
+                    yield return Soma.FadeRoutine(
                         _audioSource,
                         fadeInDuration,
                         properties.Volume,
@@ -204,7 +209,7 @@ namespace Devolfer.Soma
 
                 onComplete?.Invoke();
 
-                _manager.Stop(this, false);
+                _manager.Stop_Entity(this, false);
                 Playing = false;
                 _playRoutine = null;
             }
@@ -272,7 +277,7 @@ namespace Devolfer.Soma
             await TaskHelper.WaitWhile(SourceIsPlayingOrPausedPredicate, cancellationToken: cancellationToken);
 #endif
 
-            await _manager.StopAsync(this, false, cancellationToken: cancellationToken);
+            await _manager.StopAsync_Entity(this, false, cancellationToken: cancellationToken);
 
             Playing = false;
         }
@@ -391,7 +396,7 @@ namespace Devolfer.Soma
                 {
                     Stopping = true;
 
-                    yield return SoundManager.FadeRoutine(_audioSource, fadeOutDuration, 0, fadeOutEase);
+                    yield return Soma.FadeRoutine(_audioSource, fadeOutDuration, 0, fadeOutEase);
 
                     _audioSource.Stop();
 
@@ -517,7 +522,7 @@ namespace Devolfer.Soma
             {
                 Fading = true;
 
-                yield return SoundManager.FadeRoutine(_audioSource, duration, targetVolume, ease, _waitWhilePaused);
+                yield return Soma.FadeRoutine(_audioSource, duration, targetVolume, ease, _waitWhilePaused);
 
                 onComplete?.Invoke();
 

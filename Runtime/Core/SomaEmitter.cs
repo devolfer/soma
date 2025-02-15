@@ -13,8 +13,10 @@ namespace Devolfer.Soma
         [Header("Configurations")]
         [Space]
         [SerializeField] private PlayConfiguration _play;
+
         [Space]
         [SerializeField] private StopConfiguration _stop;
+
         [Space]
         [SerializeField] private FadeConfiguration _fade;
 
@@ -34,9 +36,9 @@ namespace Devolfer.Soma
         /// </summary>
         public void Play()
         {
-            Soma.Instance.Play(
+            Soma.Play(
                 _source,
-                followTarget: _play.Follow ? _transform : default,
+                followTarget: _play.Follow ? _transform : null,
                 position: _play.Position,
                 fadeIn: _play.FadeIn,
                 fadeInDuration: _play.FadeInDuration,
@@ -49,7 +51,7 @@ namespace Devolfer.Soma
         /// </summary>
         public void Pause()
         {
-            Soma.Instance.Pause(_source);
+            Soma.Pause(_source);
         }
 
         /// <summary>
@@ -57,7 +59,7 @@ namespace Devolfer.Soma
         /// </summary>
         public void Resume()
         {
-            Soma.Instance.Resume(_source);
+            Soma.Resume(_source);
         }
 
         /// <summary>
@@ -65,7 +67,7 @@ namespace Devolfer.Soma
         /// </summary>
         public void Stop()
         {
-            Soma.Instance.Stop(
+            Soma.Stop(
                 _source,
                 fadeOut: _stop.FadeOut,
                 fadeOutDuration: _stop.FadeOutDuration,
@@ -79,7 +81,7 @@ namespace Devolfer.Soma
         /// <param name="targetVolume">The target volume the fade will reach at the end.</param>
         public void Fade(float targetVolume)
         {
-            Soma.Instance.Fade(
+            Soma.Fade(
                 _source,
                 targetVolume,
                 _fade.FadeDuration,
@@ -92,17 +94,18 @@ namespace Devolfer.Soma
         {
             [Tooltip("Should the sound follow the transform this script is attached to when playing?")]
             public bool Follow = true;
-            
-            [Tooltip("Either the global position or, when following, the position offset at which the sound is played.")]
+
+            [Tooltip(
+                "Either the global position or, when following, the position offset at which the sound is played.")]
             public Vector3 Position;
 
             [Tooltip("Should the sound fade in when playing?")]
             public bool FadeIn;
-            
+
             [ShowIf("FadeIn")]
             [Tooltip("The duration in seconds the fading in will take.")]
             public float FadeInDuration = .5f;
-            
+
             [ShowIf("FadeIn")]
             [Tooltip("The easing applied when fading in.")]
             public Ease FadeInEase = Ease.Linear;
@@ -117,11 +120,11 @@ namespace Devolfer.Soma
         {
             [Tooltip("Should the sound fade out when stopping?")]
             public bool FadeOut = true;
-            
+
             [ShowIf("FadeOut")]
             [Tooltip("The duration in seconds the fading out will take.")]
             public float FadeOutDuration = .5f;
-            
+
             [ShowIf("FadeOut")]
             [Tooltip("The easing applied when fading out.")]
             public Ease FadeOutEase = Ease.Linear;
@@ -136,7 +139,7 @@ namespace Devolfer.Soma
         {
             [Tooltip("The duration in seconds the fade will take.")]
             public float FadeDuration = 1f;
-            
+
             [Tooltip("The easing applied when fading.")]
             public Ease FadeEase = Ease.Linear;
 
