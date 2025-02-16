@@ -2174,7 +2174,7 @@ namespace Devolfer.Soma
         }
 
 #if !UNITASK_INCLUDED
-        private static IEnumerator FadeMixerRoutine(MixerVolumeGroup mixerVolumeGroup,
+        private static IEnumerator FadeMixerRoutine(SomaVolumeMixerGroup mixerVolumeGroup,
                                                     float duration,
                                                     float targetVolume,
                                                     Ease ease)
@@ -2182,7 +2182,7 @@ namespace Devolfer.Soma
             return FadeMixerRoutine(mixerVolumeGroup, duration, targetVolume, EasingFunctions.GetEasingFunction(ease));
         }
 
-        private static IEnumerator FadeMixerRoutine(MixerVolumeGroup mixerVolumeGroup,
+        private static IEnumerator FadeMixerRoutine(SomaVolumeMixerGroup mixerVolumeGroup,
                                                     float duration,
                                                     float targetVolume,
                                                     Func<float, float> easeFunction)
