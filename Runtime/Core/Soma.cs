@@ -27,7 +27,7 @@ namespace Devolfer.Soma
         [Tooltip(
             "The number of entities pre-allocated in the pool." +
             "\n\nIdeally set this to the expected number of maximum simultaneously playing sounds.")]
-        [SerializeField] private int _soundEntityPoolCapacityDefault = 64;
+        [SerializeField] private int _entityPoolSize = 32;
 
         [Space]
         [Tooltip(
@@ -97,9 +97,9 @@ namespace Devolfer.Soma
                 actionOnGet: entity => entity.gameObject.SetActive(true),
                 actionOnRelease: entity => entity.gameObject.SetActive(false),
                 actionOnDestroy: entity => Destroy(entity.gameObject),
-                defaultCapacity: _soundEntityPoolCapacityDefault);
+                defaultCapacity: _entityPoolSize);
 
-            _entityPool.PreAllocate(_soundEntityPoolCapacityDefault);
+            _entityPool.PreAllocate(_entityPoolSize);
         }
 
         private void SetupMixers()

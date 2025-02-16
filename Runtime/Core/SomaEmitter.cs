@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Devolfer.Soma
 {
@@ -87,65 +85,6 @@ namespace Devolfer.Soma
                 _fade.FadeDuration,
                 ease: _fade.FadeEase,
                 onComplete: _fade.OnComplete.Invoke);
-        }
-
-        [Serializable]
-        private class PlayConfiguration
-        {
-            [Tooltip("Should the sound follow the transform this script is attached to when playing?")]
-            public bool Follow = true;
-
-            [Tooltip(
-                "Either the global position or, when following, the relative position offset at which the sound is played.")]
-            public Vector3 Position;
-
-            [Tooltip("Should the sound fade in when playing?")]
-            public bool FadeIn;
-
-            [ShowIf("FadeIn")]
-            [Tooltip("The duration in seconds the fading in will take.")]
-            public float FadeInDuration = .5f;
-
-            [ShowIf("FadeIn")]
-            [Tooltip("The easing applied when fading in.")]
-            public Ease FadeInEase = Ease.Linear;
-
-            [Space]
-            [Tooltip("Event invoked once sound completes playing.")]
-            public UnityEvent OnComplete;
-        }
-
-        [Serializable]
-        private class StopConfiguration
-        {
-            [Tooltip("Should the sound fade out when stopping?")]
-            public bool FadeOut = true;
-
-            [ShowIf("FadeOut")]
-            [Tooltip("The duration in seconds the fading out will take.")]
-            public float FadeOutDuration = .5f;
-
-            [ShowIf("FadeOut")]
-            [Tooltip("The easing applied when fading out.")]
-            public Ease FadeOutEase = Ease.Linear;
-
-            [Space]
-            [Tooltip("Event invoked once sound completes stopping.")]
-            public UnityEvent OnComplete;
-        }
-
-        [Serializable]
-        private class FadeConfiguration
-        {
-            [Tooltip("The duration in seconds the fade will take.")]
-            public float FadeDuration = 1f;
-
-            [Tooltip("The easing applied when fading.")]
-            public Ease FadeEase = Ease.Linear;
-
-            [Space]
-            [Tooltip("Event invoked once sound completes fading.")]
-            public UnityEvent OnComplete;
         }
     }
 }

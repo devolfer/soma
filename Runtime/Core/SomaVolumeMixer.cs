@@ -99,19 +99,5 @@ namespace Devolfer.Soma
 
             Soma.UnregisterMixerVolumeGroup(_group);
         }
-
-        [Serializable]
-        private class FadeConfiguration
-        {
-            [Tooltip("The duration in seconds the fade will take.")]
-            public float FadeDuration = 1f;
-
-            [Tooltip("The easing applied when fading.")]
-            public Ease FadeEase = Ease.Linear;
-
-            [Space]
-            [Tooltip("Event invoked once volume completes fading.")]
-            public UnityEvent OnComplete;
-        }
     }
 }
