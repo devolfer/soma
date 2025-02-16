@@ -1,13 +1,15 @@
-# SOMA
 ![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-This package provides a lean sound manager for any Unity project.
+<img width="1200" alt="Image" src="https://github.com/user-attachments/assets/f6446358-8078-4b91-b38d-82c971990d76" />   
+
+<br></b>
+Includes:
 * Play/Pause/Resume/Fade/Stop individual or all sounds
 * Set/Mute/Fade volume of Audio Mixers
-* Uses object pooling under the hood
-* Easily access anywhere in code (as persistent singleton)
+* Sound entities use object pooling under the hood
 * Async/Await support (including [UniTask](https://github.com/Cysharp/UniTask)!)
+* Easy to learn & powerful API
 * Emitter & Volume Mixer components for non-coders
 
 ## Table of Contents
@@ -37,7 +39,7 @@ Through the Package Manager in the Editor as a git package: `https://github.com/
 The Package Manager can be opened under `Window -> Package Manager`.
 
 <img width="640" alt="add-git-package-0" src="https://github.com/user-attachments/assets/e1e4ab90-fdc4-40e2-9768-3b23dc69f12b">
-<img width="640" alt="add-git-package-1" src="https://github.com/user-attachments/assets/96e8afc2-e9a2-4861-b4ae-78e96450062a">
+<img width="640" alt="add-git-package-1" src="https://github.com/user-attachments/assets/e01074af-0f7f-40aa-8151-adb980aca8e2" />
 
 Or as `"com.devolfer.soma": "https://github.com/devolfer/soma.git"` in `Packages/manifest.json`.
 
