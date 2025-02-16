@@ -1,8 +1,8 @@
-# Soma
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+# SOMA
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-This package provides a lean sound manager for a Unity project.
+This package provides a lean sound manager for any Unity project.
 * Play/Pause/Resume/Fade/Stop individual or all sounds
 * Set/Mute/Fade volume of Audio Mixers
 * Uses object pooling under the hood
