@@ -357,11 +357,11 @@ Registering via Editor can be done through the [Soma Volume Mixer](#soma-volume-
 
 For the latter, right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Soma` will create an instance.   
 
-<img width="362" alt="add-sound-manager" src="https://github.com/user-attachments/assets/a446a32f-6e96-4656-b78a-e9577d76cea9">
+<img width="358" alt="Image" src="https://github.com/user-attachments/assets/ed0cee9a-6b02-41a4-b9d6-5d8b14d5f3d7" />
 
 Any groups can then be added in the list of `Mixer Volume Groups Default`.
 
-<img width="534" alt="add-mixer-volume-group-inspector" src="https://github.com/user-attachments/assets/929c0555-7f7c-4bb8-8912-5c965358e8fa">
+<img width="474" alt="Image" src="https://github.com/user-attachments/assets/7d8d07d3-0cf5-49fd-ab68-63be4c8fb746" />
 
 *If left empty, `Soma` will register and unregister the groups contained in the `AudioMixerDefault` asset automatically!*
 
@@ -435,12 +435,12 @@ For any finer controlled cross-fading, it is recommended to call multiple fades 
 The `Soma Emitter` component is a simple way of adding a sound, that is handled by `Soma`.   
 It can be attached to any gameObject or created by right-clicking in the `Hierarchy` or under `GameObject` and then `Audio -> Soma Emitter`.
 
-<img width="362" alt="add-sound-emitter" src="https://github.com/user-attachments/assets/8828558b-41a5-4e56-ad3d-6c3d3785e2e1">
+<img width="358" alt="Image" src="https://github.com/user-attachments/assets/ad9c522e-cd7c-4bff-8ac4-3cbcf30c3e71" />
 
 An `AudioSource` component will automatically be added if not already present.   
 Through it and the `Configurations` `Play`, `Stop` and `Fade` it is possible to define the sound behaviour in detail.
 
-<img width="321" alt="sound-emitter-overview" src="https://github.com/user-attachments/assets/092573ec-a987-4a8e-9cf2-dfa85bcc668e">
+<img width="380" alt="Image" src="https://github.com/user-attachments/assets/bdb1e20b-7a1b-418e-afc8-a680272265f2" />
  
 The component grants access to the following public methods:
 * **Play**: Starts sound playback, if not already playing.
@@ -453,19 +453,19 @@ The component grants access to the following public methods:
 
 The image below shows an example usage of a `Button` component and how one could invoke the methods via the `onClick` event.
 
-<img width="580" alt="sound-emitter-public-methods" src="https://github.com/user-attachments/assets/da049164-8c4f-4b8b-b5e8-61f0c3aef5da">
+<img width="594" alt="Image" src="https://github.com/user-attachments/assets/812e1794-2361-4d07-a813-e0502667e549" />
 
 ### Soma Volume Mixer
 A `Soma Volume Mixer` simplifies volume mixing of an `Audio Mixer` group and uses the `Soma` for it.   
 This component can be added to any GameObject in the scene.   
 Or by creating it via right-clicking in the `Hierarchy` or using the `GameObject` menu, then choosing `Audio -> Soma Volume Mixer`.
 
-<img width="363" alt="add-sound-volume-mixer" src="https://github.com/user-attachments/assets/eca71cd0-d8e8-44b7-ae38-e01374ed1014">
+<img width="358" alt="Image" src="https://github.com/user-attachments/assets/ecd6d699-c541-405a-ba61-829c106f8093" />
 
 For the component to work, a reference to the `Audio Mixer` asset is mandatory and the `Exposed Parameter` name of the group has to be defined.   
 Section [Mandatory Setup](#mandatory-setup) explains how to create such group and expose a parameter for it.
 
-<img width="383" alt="sound-volume-mixer-overview" src="https://github.com/user-attachments/assets/112d5418-32ea-4c52-acb8-a2ee796d7dca">
+<img width="426" alt="Image" src="https://github.com/user-attachments/assets/1ee257eb-29bb-4ab4-928a-6bfecf95866c" />
 
 The following methods of the component are usable:
 * **Set**: Changes group volume to the given value instantly.
@@ -478,7 +478,7 @@ The following methods of the component are usable:
 
 An example usage of the above methods can be seen below with a `Button` component and its `onClick` event.
 
-<img width="600" alt="sound-volume-mixer-public-methods" src="https://github.com/user-attachments/assets/3354934d-fb70-4725-9793-6e5d39cbe851">
+<img width="594" alt="Image" src="https://github.com/user-attachments/assets/bae25793-53bf-4f4f-953a-852b713d9da1" />
 
 ## License
 This package is under the MIT License.
