@@ -39,7 +39,7 @@ namespace Devolfer.Soma
         /// Is the entity stopping?
         /// </summary>
         public bool Stopping { get; private set; }
-        
+
         /// <summary>
         /// The properties applied on this entity.
         /// </summary>
@@ -83,7 +83,7 @@ namespace Devolfer.Soma
         /// The position offset relative to the <see cref="FollowTarget"/>.
         /// </summary>
         public Vector3 FollowTargetOffset => _followTargetOffset;
-        
+
         private Soma _manager;
         private SomaProperties _properties;
         private Transform _transform;
@@ -145,72 +145,33 @@ namespace Devolfer.Soma
                                  Vector3 position = default,
                                  bool fadeIn = false,
                                  float fadeInDuration = .5f,
-                                 Ease fadeInEase = Ease.Linear,
+                                 Func<float, float> easeFunction = null,
                                  Action onComplete = null)
         {
             SetProperties(properties, followTarget, position);
 
 #if UNITASK_INCLUDED
-            PlayTask(TaskHelper.CancelAndRefresh(ref _playCts)).Forget();
+            PlayUniTask(
+                    fadeIn,
+                    fadeInDuration,
+                    properties.Volume,
+                    easeFunction,
+                    TaskHelper.CancelAndRefresh(ref _playCts),
+                    onComplete)
+                .Forget();
 
             return this;
 
-            async UniTaskVoid PlayTask(CancellationToken cancellationToken)
-            {
-                Playing = true;
-
-                _audioSource.Play();
-
-                if (fadeIn)
-                {
-                    _audioSource.volume = 0;
-
-                    await Soma.FadeTask(
-                        _audioSource,
-                        fadeInDuration,
-                        properties.Volume,
-                        fadeInEase,
-                        PausedPredicate,
-                        cancellationToken: cancellationToken);
-                }
-
-                await UniTask.WaitWhile(() => Playing || Paused, cancellationToken: cancellationToken);
-
-                onComplete?.Invoke();
-
-                await _manager.StopAsync_Entity(this, false, cancellationToken: cancellationToken);
-
-                Playing = false;
-            }
 #else
-            _playRoutine = _manager.StartCoroutine(PlayRoutine());
+            _playRoutine = _manager.StartCoroutine(
+                PlayRoutine(
+                    fadeIn,
+                    fadeInDuration,
+                    properties.Volume,
+                    easeFunction,
+                    onComplete));
             
             return this;
-
-            IEnumerator PlayRoutine()
-            {
-                Playing = true;
-                _audioSource.Play();
-
-                if (fadeIn)
-                {
-                    _audioSource.volume = 0;
-                    yield return Soma.FadeRoutine(
-                        _audioSource,
-                        fadeInDuration,
-                        properties.Volume,
-                        fadeInEase,
-                        _waitWhilePaused);
-                }
-
-                yield return _waitWhileSourceIsPlayingOrPaused;
-
-                onComplete?.Invoke();
-
-                _manager.Stop_Entity(this, false);
-                Playing = false;
-                _playRoutine = null;
-            }
 #endif
         }
 
@@ -219,7 +180,7 @@ namespace Devolfer.Soma
                                  Vector3 position = default,
                                  bool fadeIn = false,
                                  float fadeInDuration = .5f,
-                                 Ease fadeInEase = Ease.Linear,
+                                 Func<float, float> easeFunction = null,
                                  Action onComplete = null)
         {
             _externalAudioSource = audioSource;
@@ -230,7 +191,7 @@ namespace Devolfer.Soma
 
             SomaProperties properties = audioSource;
 
-            return Play(properties, followTarget, position, fadeIn, fadeInDuration, fadeInEase, onComplete);
+            return Play(properties, followTarget, position, fadeIn, fadeInDuration, easeFunction, onComplete);
         }
 
         internal async DynamicTask PlayAsync(SomaProperties properties,
@@ -238,7 +199,7 @@ namespace Devolfer.Soma
                                              Vector3 position = default,
                                              bool fadeIn = false,
                                              float fadeInDuration = .5f,
-                                             Ease fadeInEase = Ease.Linear,
+                                             Func<float, float> easeFunction = null,
                                              CancellationToken cancellationToken = default)
         {
             if (cancellationToken == default)
@@ -264,7 +225,7 @@ namespace Devolfer.Soma
                     _audioSource,
                     fadeInDuration,
                     properties.Volume,
-                    fadeInEase,
+                    easeFunction,
                     PausedPredicate,
                     cancellationToken);
             }
@@ -275,7 +236,7 @@ namespace Devolfer.Soma
             await TaskHelper.WaitWhile(SourceIsPlayingOrPausedPredicate, cancellationToken: cancellationToken);
 #endif
 
-            await _manager.StopAsync_Entity(this, false, cancellationToken: cancellationToken);
+            await _manager.StopAsync_Internal(this, false, 0, null, cancellationToken);
 
             Playing = false;
         }
@@ -285,7 +246,7 @@ namespace Devolfer.Soma
                                        Vector3 position = default,
                                        bool fadeIn = false,
                                        float fadeInDuration = .5f,
-                                       Ease fadeInEase = Ease.Linear,
+                                       Func<float, float> easeFunction = null,
                                        CancellationToken cancellationToken = default)
         {
             _externalAudioSource = audioSource;
@@ -296,7 +257,14 @@ namespace Devolfer.Soma
 
             SomaProperties properties = audioSource;
 
-            return PlayAsync(properties, followTarget, position, fadeIn, fadeInDuration, fadeInEase, cancellationToken);
+            return PlayAsync(
+                properties,
+                followTarget,
+                position,
+                fadeIn,
+                fadeInDuration,
+                easeFunction,
+                cancellationToken);
         }
 
         internal void Pause()
@@ -317,7 +285,7 @@ namespace Devolfer.Soma
 
         internal void Stop(bool fadeOut = true,
                            float fadeOutDuration = .5f,
-                           Ease fadeOutEase = Ease.Linear,
+                           Func<float, float> easeFunction = null,
                            Action onComplete = null)
         {
             if (Stopping && fadeOut) return;
@@ -362,56 +330,17 @@ namespace Devolfer.Soma
             else
             {
 #if UNITASK_INCLUDED
-                StopTask(TaskHelper.CancelAndRefresh(ref _stopCts)).Forget();
-
-                return;
-
-                async UniTaskVoid StopTask(CancellationToken cancellationToken)
-                {
-                    Stopping = true;
-
-                    await Soma.FadeTask(
-                        _audioSource,
-                        fadeOutDuration,
-                        0,
-                        fadeOutEase,
-                        cancellationToken: cancellationToken);
-
-                    _audioSource.Stop();
-
-                    onComplete?.Invoke();
-
-                    Stopping = false;
-
-                    ResetProperties();
-                }
+                StopUniTask(fadeOutDuration, easeFunction, TaskHelper.CancelAndRefresh(ref _stopCts), onComplete)
+                    .Forget();
 #else
-                _stopRoutine = _manager.StartCoroutine(StopRoutine());
-
-                return;
-
-                IEnumerator StopRoutine()
-                {
-                    Stopping = true;
-
-                    yield return Soma.FadeRoutine(_audioSource, fadeOutDuration, 0, fadeOutEase);
-
-                    _audioSource.Stop();
-
-                    onComplete?.Invoke();
-
-                    Stopping = false;
-                    _stopRoutine = null;
-                    
-                    ResetProperties();
-                }
+                _stopRoutine = _manager.StartCoroutine(StopRoutine(fadeOutDuration, easeFunction, onComplete));
 #endif
             }
         }
 
         internal async DynamicTask StopAsync(bool fadeOut = true,
                                              float fadeOutDuration = .5f,
-                                             Ease fadeOutEase = Ease.Linear,
+                                             Func<float, float> easeFunction = null,
                                              CancellationToken cancellationToken = default)
         {
             if (Stopping && fadeOut) return;
@@ -466,7 +395,7 @@ namespace Devolfer.Soma
                     _audioSource,
                     fadeOutDuration,
                     0,
-                    fadeOutEase,
+                    easeFunction,
                     cancellationToken: cancellationToken);
 
                 _audioSource.Stop();
@@ -476,7 +405,10 @@ namespace Devolfer.Soma
             }
         }
 
-        internal void Fade(float targetVolume, float duration, Ease ease = Ease.Linear, Action onComplete = null)
+        internal void Fade(float targetVolume,
+                           float duration,
+                           Func<float, float> easeFunction = null,
+                           Action onComplete = null)
         {
             if (Fading)
             {
@@ -490,49 +422,16 @@ namespace Devolfer.Soma
             }
 
 #if UNITASK_INCLUDED
-            FadeTask(TaskHelper.CancelAndRefresh(ref _fadeCts)).Forget();
-
-            return;
-
-            async UniTaskVoid FadeTask(CancellationToken cancellationToken)
-            {
-                Fading = true;
-
-                await Soma.FadeTask(
-                    _audioSource,
-                    duration,
-                    targetVolume,
-                    ease,
-                    PausedPredicate,
-                    cancellationToken);
-
-                onComplete?.Invoke();
-
-                Fading = false;
-            }
-
+            FadeUniTask(targetVolume, duration, easeFunction, TaskHelper.CancelAndRefresh(ref _fadeCts), onComplete)
+                .Forget();
 #else
-            _fadeRoutine = _manager.StartCoroutine(FadeRoutine());
-
-            return;
-
-            IEnumerator FadeRoutine()
-            {
-                Fading = true;
-
-                yield return Soma.FadeRoutine(_audioSource, duration, targetVolume, ease, _waitWhilePaused);
-
-                onComplete?.Invoke();
-
-                Fading = false;
-                _fadeRoutine = null;
-            }
+            _fadeRoutine = _manager.StartCoroutine(FadeRoutine(targetVolume, duration, easeFunction, onComplete));
 #endif
         }
 
         internal async DynamicTask FadeAsync(float targetVolume,
                                              float duration,
-                                             Ease ease = Ease.Linear,
+                                             Func<float, float> easeFunction = null,
                                              CancellationToken cancellationToken = default)
         {
             if (cancellationToken == default)
@@ -551,7 +450,7 @@ namespace Devolfer.Soma
                 _audioSource,
                 duration,
                 targetVolume,
-                ease,
+                easeFunction,
                 PausedPredicate,
                 cancellationToken);
 
@@ -594,5 +493,147 @@ namespace Devolfer.Soma
             _externalAudioSource = null;
             FromExternalAudioSource = false;
         }
+
+#if UNITASK_INCLUDED
+        private async UniTaskVoid PlayUniTask(bool fadeIn,
+                                              float fadeInDuration,
+                                              float fadeInTargetVolume,
+                                              Func<float, float> fadeInEaseFunction,
+                                              CancellationToken cancellationToken,
+                                              Action onComplete)
+        {
+            Playing = true;
+
+            _audioSource.Play();
+
+            if (fadeIn)
+            {
+                _audioSource.volume = 0;
+
+                await Soma.FadeTask(
+                    _audioSource,
+                    fadeInDuration,
+                    fadeInTargetVolume,
+                    fadeInEaseFunction,
+                    PausedPredicate,
+                    cancellationToken: cancellationToken);
+            }
+
+            await UniTask.WaitWhile(() => Playing || Paused, cancellationToken: cancellationToken);
+
+            onComplete?.Invoke();
+
+            await _manager.StopAsync_Internal(this, false, 0, null, cancellationToken);
+
+            Playing = false;
+        }
+
+        private async UniTaskVoid StopUniTask(float fadeOutDuration,
+                                              Func<float, float> fadeOutEaseFunction,
+                                              CancellationToken cancellationToken,
+                                              Action onComplete)
+        {
+            Stopping = true;
+
+            await Soma.FadeTask(
+                _audioSource,
+                fadeOutDuration,
+                0,
+                fadeOutEaseFunction,
+                cancellationToken: cancellationToken);
+
+            _audioSource.Stop();
+
+            onComplete?.Invoke();
+
+            Stopping = false;
+
+            ResetProperties();
+        }
+
+        private async UniTaskVoid FadeUniTask(float targetVolume,
+                                              float duration,
+                                              Func<float, float> easeFunction,
+                                              CancellationToken cancellationToken,
+                                              Action onComplete)
+        {
+            Fading = true;
+
+            await Soma.FadeTask(
+                _audioSource,
+                duration,
+                targetVolume,
+                easeFunction,
+                PausedPredicate,
+                cancellationToken);
+
+            onComplete?.Invoke();
+
+            Fading = false;
+        }
+
+#else
+        private IEnumerator PlayRoutine(bool fadeIn,
+                                        float fadeInDuration,
+                                        float fadeInTargetVolume,
+                                        Func<float, float> fadeInEaseFunction,
+                                        Action onComplete)
+        {
+            Playing = true;
+            _audioSource.Play();
+
+            if (fadeIn)
+            {
+                _audioSource.volume = 0;
+                yield return Soma.FadeRoutine(
+                    _audioSource,
+                    fadeInDuration,
+                    fadeInTargetVolume,
+                    fadeInEaseFunction,
+                    _waitWhilePaused);
+            }
+
+            yield return _waitWhileSourceIsPlayingOrPaused;
+
+            onComplete?.Invoke();
+
+            _manager.Stop_Internal(this, false, 0, null, null);
+            Playing = false;
+            _playRoutine = null;
+        }
+
+        private IEnumerator StopRoutine(float fadeOutDuration,
+                                        Func<float, float> fadeOutEaseFunction,
+                                        Action onComplete)
+        {
+            Stopping = true;
+
+            yield return Soma.FadeRoutine(_audioSource, fadeOutDuration, 0, fadeOutEaseFunction);
+
+            _audioSource.Stop();
+
+            onComplete?.Invoke();
+
+            Stopping = false;
+            _stopRoutine = null;
+
+            ResetProperties();
+        }
+
+        private IEnumerator FadeRoutine(float targetVolume,
+                                        float duration,
+                                        Func<float, float> easeFunction,
+                                        Action onComplete)
+        {
+            Fading = true;
+
+            yield return Soma.FadeRoutine(_audioSource, duration, targetVolume, easeFunction, _waitWhilePaused);
+
+            onComplete?.Invoke();
+
+            Fading = false;
+            _fadeRoutine = null;
+        }
+#endif
     }
 }
