@@ -36,7 +36,8 @@ namespace Devolfer.Soma
             "\n\nIf none are provided, the default Audio Mixer and groups bundled with the package will be used.")]
         [SerializeField] private SomaVolumeMixerGroup[] _mixerVolumeGroupsDefault;
 
-        private bool _setup;
+        private static Soma s_instance;
+        private static bool s_setupSoma;
 
         private ObjectPool<SomaEntity> _entityPool;
 
@@ -53,25 +54,41 @@ namespace Devolfer.Soma
         private Dictionary<string, Coroutine> _mixerFadeRoutines;
 #endif
 
-        #region Setup
-
-        protected override void Setup()
+        private void LateUpdate()
         {
-            base.Setup();
+            if (!s_setupSoma) return;
 
-            if (s_instance != this) return;
-
-            SetupIfNeeded();
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesPlaying) entity.ProcessTargetFollowing();
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesStopping) entity.ProcessTargetFollowing();
         }
 
-        private void SetupIfNeeded()
+        protected override void OnDestroy()
         {
-            if (_setup) return;
+            base.OnDestroy();
 
-            _setup = true;
+            if (!MarkedForDestruction || !s_setupSoma) return;
+
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesPlaying) entity.Cleanup();
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesPaused) entity.Cleanup();
+            foreach ((SomaEntity entity, AudioSource _) in _entitiesStopping) entity.Cleanup();
+
+            s_setupSoma = false;
+        }
+
+        #region Setup
+
+        protected override void LazySetup()
+        {
+            base.LazySetup();
+
+            if (!TryGetInstance(out s_instance)) return;
+            if (s_instance != this) return;
+            if (s_setupSoma) return;
 
             SetupEntities();
             SetupMixers();
+
+            s_setupSoma = true;
         }
 
         private void SetupEntities()
@@ -153,7 +170,9 @@ namespace Devolfer.Soma
                                       Ease fadeInEase = Ease.Linear,
                                       Action onComplete = null)
         {
-            return Instance.Play_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return null;
+
+            return s_instance.Play_Internal(
                 properties,
                 followTarget,
                 position,
@@ -183,7 +202,9 @@ namespace Devolfer.Soma
                                       Ease fadeInEase = Ease.Linear,
                                       Action onComplete = null)
         {
-            return Instance.Play_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return null;
+
+            return s_instance.Play_Internal(
                 audioSource,
                 followTarget,
                 position,
@@ -236,6 +257,7 @@ namespace Devolfer.Soma
         /// <param name="fadeInEase">The easing applied when fading in.</param>
         /// <param name="cancellationToken">Optional token for cancelling the playback.</param>
         /// <returns>The playback task.</returns>
+        /// <remarks>Outs the playback <see cref="SomaEntity"/>.</remarks>
         public static DynamicTask PlayAsync(out SomaEntity entity,
                                             SomaProperties properties,
                                             Transform followTarget = null,
@@ -245,7 +267,13 @@ namespace Devolfer.Soma
                                             Ease fadeInEase = Ease.Linear,
                                             CancellationToken cancellationToken = default)
         {
-            return Instance.PlayAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma)
+            {
+                entity = null;
+                return default;
+            }
+
+            return s_instance.PlayAsync_Internal(
                 out entity,
                 properties,
                 followTarget,
@@ -268,6 +296,7 @@ namespace Devolfer.Soma
         /// <param name="fadeInEase">The easing applied when fading in.</param>
         /// <param name="cancellationToken">Optional token for cancelling the playback.</param>
         /// <returns>The playback task.</returns>
+        /// <remarks>Outs the playback <see cref="SomaEntity"/>.</remarks>
         public static DynamicTask PlayAsync(out SomaEntity entity,
                                             AudioSource audioSource,
                                             Transform followTarget = null,
@@ -277,7 +306,13 @@ namespace Devolfer.Soma
                                             Ease fadeInEase = Ease.Linear,
                                             CancellationToken cancellationToken = default)
         {
-            return Instance.PlayAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma)
+            {
+                entity = null;
+                return default;
+            }
+
+            return s_instance.PlayAsync_Internal(
                 out entity,
                 audioSource,
                 followTarget,
@@ -300,6 +335,7 @@ namespace Devolfer.Soma
         /// <param name="fadeInEase">The easing applied when fading in.</param>
         /// <param name="cancellationToken">Optional token for cancelling the playback.</param>
         /// <returns>The playback task.</returns>
+        /// <remarks>Outs the playback <see cref="SomaEntity"/>.</remarks>
         public static DynamicTask PlayAsync(out SomaEntity entity,
                                             AudioClip audioClip,
                                             Transform followTarget = null,
@@ -425,8 +461,6 @@ namespace Devolfer.Soma
                                          Func<float, float> fadeInEaseFunction,
                                          Action onComplete)
         {
-            SetupIfNeeded();
-
             SomaEntity entity = _entityPool.Get();
 
             entity.Play(properties, followTarget, position, fadeIn, fadeInDuration, fadeInEaseFunction, onComplete);
@@ -444,8 +478,6 @@ namespace Devolfer.Soma
                                          Action onComplete)
         {
             if (audioSource == null || audioSource.clip == null) return null;
-
-            SetupIfNeeded();
 
             if (HasPlaying(audioSource, out SomaEntity playingEntity)) return playingEntity;
 
@@ -469,11 +501,9 @@ namespace Devolfer.Soma
                                                Vector3 position,
                                                bool fadeIn,
                                                float fadeInDuration,
-                                               Func<float, float> fadeInEase,
+                                               Func<float, float> fadeInEaseFunction,
                                                CancellationToken cancellationToken)
         {
-            SetupIfNeeded();
-
             entity = _entityPool.Get();
 
             DynamicTask task = entity.PlayAsync(
@@ -482,7 +512,7 @@ namespace Devolfer.Soma
                 position,
                 fadeIn,
                 fadeInDuration,
-                fadeInEase,
+                fadeInEaseFunction,
                 cancellationToken);
 
             AddPlaying(entity);
@@ -496,7 +526,7 @@ namespace Devolfer.Soma
                                                Vector3 position,
                                                bool fadeIn,
                                                float fadeInDuration,
-                                               Func<float, float> fadeInEase,
+                                               Func<float, float> fadeInEaseFunction,
                                                CancellationToken cancellationToken)
         {
             if (audioSource == null || audioSource.clip == null)
@@ -504,8 +534,6 @@ namespace Devolfer.Soma
                 entity = null;
                 return default;
             }
-
-            SetupIfNeeded();
 
             entity = _entityPool.Get();
 
@@ -515,7 +543,7 @@ namespace Devolfer.Soma
                 position,
                 fadeIn,
                 fadeInDuration,
-                fadeInEase,
+                fadeInEaseFunction,
                 cancellationToken);
 
             AddPlaying(entity);
@@ -535,7 +563,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if the entity is currently stopping.</remarks>
         public static bool Pause(SomaEntity entity)
         {
-            return Instance.Pause_Internal(entity);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.Pause_Internal(entity);
         }
 
         /// <summary>
@@ -546,7 +576,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if the source is currently stopping.</remarks>
         public static bool Pause(AudioSource audioSource)
         {
-            return Instance.Pause_Internal(audioSource);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.Pause_Internal(audioSource);
         }
 
         /// <summary>
@@ -555,14 +587,14 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect on sounds currently stopping.</remarks>
         public static bool PauseAll()
         {
-            return Instance.PauseAll_Internal();
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.PauseAll_Internal();
         }
 
         private bool Pause_Internal(SomaEntity entity)
         {
             if (entity == null) return false;
-
-            SetupIfNeeded();
 
             if (!HasPlaying(entity)) return false;
             if (HasStopping(entity)) return false;
@@ -580,8 +612,6 @@ namespace Devolfer.Soma
         {
             if (audioSource == null) return false;
 
-            SetupIfNeeded();
-
             if (HasStopping(audioSource)) return false;
             if (!HasPlaying(audioSource, out SomaEntity entity)) return false;
 
@@ -596,8 +626,6 @@ namespace Devolfer.Soma
 
         private bool PauseAll_Internal()
         {
-            SetupIfNeeded();
-
             bool successful = false;
 
             foreach ((SomaEntity entity, AudioSource _) in _entitiesPlaying)
@@ -626,7 +654,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if the entity is currently stopping.</remarks>
         public static bool Resume(SomaEntity entity)
         {
-            return Instance.Resume_Internal(entity);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.Resume_Internal(entity);
         }
 
         /// <summary>
@@ -637,7 +667,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if the source is currently stopping.</remarks>
         public static bool Resume(AudioSource audioSource)
         {
-            return Instance.Resume_Internal(audioSource);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.Resume_Internal(audioSource);
         }
 
         /// <summary>
@@ -645,14 +677,14 @@ namespace Devolfer.Soma
         /// </summary>
         public static bool ResumeAll()
         {
-            return Instance.ResumeAll_Internal();
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.ResumeAll_Internal();
         }
 
         private bool Resume_Internal(SomaEntity entity)
         {
             if (entity == null) return false;
-
-            SetupIfNeeded();
 
             if (!HasPaused(entity)) return false;
             if (HasStopping(entity)) return false;
@@ -670,8 +702,6 @@ namespace Devolfer.Soma
         {
             if (audioSource == null) return false;
 
-            SetupIfNeeded();
-
             if (HasStopping(audioSource)) return false;
             if (!HasPaused(audioSource, out SomaEntity entity)) return false;
 
@@ -686,8 +716,6 @@ namespace Devolfer.Soma
 
         private bool ResumeAll_Internal()
         {
-            SetupIfNeeded();
-
             bool successful = false;
 
             foreach ((SomaEntity entity, AudioSource _) in _entitiesPaused)
@@ -723,7 +751,9 @@ namespace Devolfer.Soma
                                 Ease fadeOutEase = Ease.Linear,
                                 Action onComplete = null)
         {
-            Instance.Stop_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Stop_Internal(
                 entity,
                 fadeOut,
                 fadeOutDuration,
@@ -746,7 +776,9 @@ namespace Devolfer.Soma
                                 Ease fadeOutEase = Ease.Linear,
                                 Action onComplete = null)
         {
-            Instance.Stop_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Stop_Internal(
                 audioSource,
                 fadeOut,
                 fadeOutDuration,
@@ -770,7 +802,9 @@ namespace Devolfer.Soma
                                             Ease fadeOutEase = Ease.Linear,
                                             CancellationToken cancellationToken = default)
         {
-            return Instance.StopAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.StopAsync_Internal(
                 entity,
                 fadeOut,
                 fadeOutDuration,
@@ -794,7 +828,9 @@ namespace Devolfer.Soma
                                             Ease fadeOutEase = Ease.Linear,
                                             CancellationToken cancellationToken = default)
         {
-            return Instance.StopAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.StopAsync_Internal(
                 audioSource,
                 fadeOut,
                 fadeOutDuration,
@@ -812,7 +848,9 @@ namespace Devolfer.Soma
                                    float fadeOutDuration = 1,
                                    Ease fadeOutEase = Ease.Linear)
         {
-            Instance.StopAll_Internal(fadeOut, fadeOutDuration, EasingFunctions.GetEasingFunction(fadeOutEase));
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.StopAll_Internal(fadeOut, fadeOutDuration, EasingFunctions.GetEasingFunction(fadeOutEase));
         }
 
         /// <summary>
@@ -828,7 +866,9 @@ namespace Devolfer.Soma
                                                Ease fadeOutEase = Ease.Linear,
                                                CancellationToken cancellationToken = default)
         {
-            return Instance.StopAllAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.StopAllAsync_Internal(
                 fadeOut,
                 fadeOutDuration,
                 EasingFunctions.GetEasingFunction(fadeOutEase),
@@ -842,8 +882,6 @@ namespace Devolfer.Soma
                                     Action onComplete)
         {
             if (entity == null) return;
-
-            SetupIfNeeded();
 
             bool playingEntity = HasPlaying(entity);
             bool pausedEntity = HasPaused(entity);
@@ -875,8 +913,6 @@ namespace Devolfer.Soma
                                    Action onComplete)
         {
             if (audioSource == null) return;
-
-            SetupIfNeeded();
 
             bool playingAudioSource = HasPlaying(audioSource, out SomaEntity entityPlaying);
             bool pausedAudioSource = HasPaused(audioSource, out SomaEntity entityPaused);
@@ -910,8 +946,6 @@ namespace Devolfer.Soma
         {
             if (entity == null) return;
 
-            SetupIfNeeded();
-
             bool playingEntity = HasPlaying(entity);
             bool pausedEntity = HasPaused(entity);
 
@@ -937,8 +971,6 @@ namespace Devolfer.Soma
         {
             if (audioSource == null) return;
 
-            SetupIfNeeded();
-
             bool playingAudioSource = HasPlaying(audioSource, out SomaEntity entityPlaying);
             bool pausedAudioSource = HasPaused(audioSource, out SomaEntity entityPaused);
 
@@ -961,8 +993,6 @@ namespace Devolfer.Soma
                                       float fadeOutDuration,
                                       Func<float, float> fadeOutEaseFunction)
         {
-            SetupIfNeeded();
-            
             foreach (SomaEntity entity in _entitiesPlaying.Keys.ToList())
             {
                 Stop_Internal(entity, fadeOut, fadeOutDuration, fadeOutEaseFunction, null);
@@ -982,8 +1012,6 @@ namespace Devolfer.Soma
                                                         Func<float, float> fadeOutEaseFunction,
                                                         CancellationToken cancellationToken)
         {
-            SetupIfNeeded();
-
             List<DynamicTask> stopTasks = new();
 
             foreach (SomaEntity entity in _entitiesPlaying.Keys.ToList())
@@ -1021,7 +1049,9 @@ namespace Devolfer.Soma
                                Transform followTarget,
                                Vector3 position)
         {
-            Instance.Set_Internal(entity, properties, followTarget, position);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Set_Internal(entity, properties, followTarget, position);
         }
 
         /// <summary>
@@ -1038,7 +1068,9 @@ namespace Devolfer.Soma
                                Transform followTarget,
                                Vector3 position)
         {
-            Instance.Set_Internal(audioSource, properties, followTarget, position);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Set_Internal(audioSource, properties, followTarget, position);
         }
 
         private void Set_Internal(SomaEntity entity,
@@ -1047,9 +1079,6 @@ namespace Devolfer.Soma
                                   Vector3 position)
         {
             if (entity == null) return;
-
-            SetupIfNeeded();
-
             if (properties == null) return;
 
             entity.SetProperties(properties, followTarget, position);
@@ -1061,9 +1090,6 @@ namespace Devolfer.Soma
                                   Vector3 position)
         {
             if (audioSource == null) return;
-
-            SetupIfNeeded();
-
             if (properties == null) return;
 
             if (HasPaused(audioSource, out SomaEntity entityPaused))
@@ -1097,7 +1123,14 @@ namespace Devolfer.Soma
                                 Ease ease = Ease.Linear,
                                 Action onComplete = null)
         {
-            Instance.Fade_Internal(entity, targetVolume, duration, EasingFunctions.GetEasingFunction(ease), onComplete);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Fade_Internal(
+                entity,
+                targetVolume,
+                duration,
+                EasingFunctions.GetEasingFunction(ease),
+                onComplete);
         }
 
         /// <summary>
@@ -1115,7 +1148,9 @@ namespace Devolfer.Soma
                                 Ease ease = Ease.Linear,
                                 Action onComplete = null)
         {
-            Instance.Fade_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.Fade_Internal(
                 audioSource,
                 targetVolume,
                 duration,
@@ -1139,7 +1174,9 @@ namespace Devolfer.Soma
                                             Ease ease = Ease.Linear,
                                             CancellationToken cancellationToken = default)
         {
-            return Instance.FadeAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.FadeAsync_Internal(
                 entity,
                 targetVolume,
                 duration,
@@ -1163,7 +1200,9 @@ namespace Devolfer.Soma
                                      Ease ease = Ease.Linear,
                                      CancellationToken cancellationToken = default)
         {
-            return Instance.FadeAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.FadeAsync_Internal(
                 audioSource,
                 targetVolume,
                 duration,
@@ -1178,8 +1217,6 @@ namespace Devolfer.Soma
                                    Action onComplete)
         {
             if (entity == null) return;
-
-            SetupIfNeeded();
 
             if (!HasPlaying(entity)) return;
             if (HasStopping(entity)) return;
@@ -1197,8 +1234,6 @@ namespace Devolfer.Soma
         {
             if (audioSource == null) return;
 
-            SetupIfNeeded();
-
             if (!HasPlaying(audioSource, out SomaEntity entityPlaying)) return;
             if (HasStopping(audioSource)) return;
 
@@ -1215,8 +1250,6 @@ namespace Devolfer.Soma
         {
             if (entity == null) return default;
 
-            SetupIfNeeded();
-
             if (HasStopping(entity)) return default;
 
             if (HasPaused(entity)) Resume(entity);
@@ -1231,8 +1264,6 @@ namespace Devolfer.Soma
                                                CancellationToken cancellationToken)
         {
             if (audioSource == null) return default;
-
-            SetupIfNeeded();
 
             if (!HasPlaying(audioSource, out SomaEntity entityPlaying)) return default;
             if (HasStopping(audioSource)) return default;
@@ -1322,7 +1353,8 @@ namespace Devolfer.Soma
         #region Cross-Fade
 
         /// <summary>
-        /// Linearly cross-fades a playing sound that is managed by Soma and a new sound. The fading out sound will be stopped at the end.
+        /// Linearly cross-fades a playing sound that is managed by Soma and a new sound.
+        /// The fading out sound will be stopped at the end.
         /// </summary>
         /// <param name="duration">The duration in seconds the cross-fade will prolong.</param>
         /// <param name="fadeOutEntity">The entity that will fade out and stop.</param>
@@ -1339,7 +1371,9 @@ namespace Devolfer.Soma
                                            Vector3 fadeInPosition = default,
                                            Action onComplete = null)
         {
-            return Instance.CrossFade_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return null;
+
+            return s_instance.CrossFade_Internal(
                 duration,
                 fadeOutEntity,
                 fadeInProperties,
@@ -1349,7 +1383,8 @@ namespace Devolfer.Soma
         }
 
         /// <summary>
-        /// Linearly cross-fades a playing sound that is managed by Soma and a new sound. The fading out sound will be stopped at the end.
+        /// Linearly cross-fades a playing sound that is managed by Soma and a new sound.
+        /// The fading out sound will be stopped at the end.
         /// </summary>
         /// <param name="duration">The duration in seconds the cross-fade will prolong.</param>
         /// <param name="fadeOutAudioSource">The source that will fade out and stop.</param>
@@ -1366,7 +1401,9 @@ namespace Devolfer.Soma
                                            Vector3 fadeInPosition = default,
                                            Action onComplete = null)
         {
-            return Instance.CrossFade_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return null;
+
+            return s_instance.CrossFade_Internal(
                 duration,
                 fadeOutAudioSource,
                 fadeInAudioSource,
@@ -1395,7 +1432,13 @@ namespace Devolfer.Soma
                                                  Vector3 fadeInPosition = default,
                                                  CancellationToken cancellationToken = default)
         {
-            return Instance.CrossFadeAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma)
+            {
+                entity = null;
+                return default;
+            }
+
+            return s_instance.CrossFadeAsync_Internal(
                 out entity,
                 duration,
                 fadeOutEntity,
@@ -1453,7 +1496,13 @@ namespace Devolfer.Soma
                                                  Vector3 fadeInPosition = default,
                                                  CancellationToken cancellationToken = default)
         {
-            return Instance.CrossFadeAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma)
+            {
+                entity = null;
+                return default;
+            }
+
+            return s_instance.CrossFadeAsync_Internal(
                 out entity,
                 duration,
                 fadeOutAudioSource,
@@ -1599,14 +1648,6 @@ namespace Devolfer.Soma
 
         #region Management
 
-        private void LateUpdate()
-        {
-            if (!_setup) return;
-
-            foreach ((SomaEntity entity, AudioSource _) in _entitiesPlaying) entity.ProcessTargetFollowing();
-            foreach ((SomaEntity entity, AudioSource _) in _entitiesStopping) entity.ProcessTargetFollowing();
-        }
-
         private static void AddToDictionaries(SomaEntity entity,
                                               ref Dictionary<SomaEntity, AudioSource> entityDictionary,
                                               ref Dictionary<AudioSource, SomaEntity> sourceDictionary)
@@ -1715,7 +1756,9 @@ namespace Devolfer.Soma
         /// <remarks>Once registered, grants access through various methods like <see cref="SetMixerGroupVolume"/> or <see cref="FadeMixerGroupVolume"/>.</remarks>
         public static void RegisterMixerVolumeGroup(SomaVolumeMixerGroup group)
         {
-            Instance.RegisterMixerVolumeGroup_Internal(group);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.RegisterMixerVolumeGroup_Internal(group);
         }
 
         /// <summary>
@@ -1724,7 +1767,9 @@ namespace Devolfer.Soma
         /// <param name="group">The group to be unregistered.</param>
         public static void UnregisterMixerVolumeGroup(SomaVolumeMixerGroup group)
         {
-            Instance.UnregisterMixerVolumeGroup_Internal(group);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return;
+
+            s_instance.UnregisterMixerVolumeGroup_Internal(group);
         }
 
         /// <summary>
@@ -1736,7 +1781,9 @@ namespace Devolfer.Soma
         /// <remarks>Changing a volume stops any ongoing volume fades applied in the mixer.</remarks>
         public static bool SetMixerGroupVolume(string exposedParameter, float value)
         {
-            return Instance.SetMixerGroupVolume_Internal(exposedParameter, value);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.SetMixerGroupVolume_Internal(exposedParameter, value);
         }
 
         /// <summary>
@@ -1747,7 +1794,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if no Volume Segments are defined in the <see cref="SomaVolumeMixerGroup"/>.</remarks>
         public static bool IncreaseMixerGroupVolume(string exposedParameter)
         {
-            return Instance.IncreaseMixerGroupVolume_Internal(exposedParameter);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.IncreaseMixerGroupVolume_Internal(exposedParameter);
         }
 
         /// <summary>
@@ -1758,7 +1807,9 @@ namespace Devolfer.Soma
         /// <remarks>Has no effect if no Volume Segments are defined in the <see cref="SomaVolumeMixerGroup"/>.</remarks>
         public static bool DecreaseMixerGroupVolume(string exposedParameter)
         {
-            return Instance.DecreaseMixerGroupVolume_Internal(exposedParameter);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.DecreaseMixerGroupVolume_Internal(exposedParameter);
         }
 
         /// <summary>
@@ -1769,7 +1820,9 @@ namespace Devolfer.Soma
         /// <returns>True, if group with exposedParameter is registered.</returns>
         public static bool MuteMixerGroupVolume(string exposedParameter, bool value)
         {
-            return Instance.MuteMixerGroupVolume_Internal(exposedParameter, value);
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.MuteMixerGroupVolume_Internal(exposedParameter, value);
         }
 
         /// <summary>
@@ -1787,7 +1840,9 @@ namespace Devolfer.Soma
                                                 Ease ease = Ease.Linear,
                                                 Action onComplete = null)
         {
-            return Instance.FadeMixerGroupVolume_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.FadeMixerGroupVolume_Internal(
                 exposedParameter,
                 targetVolume,
                 duration,
@@ -1809,7 +1864,9 @@ namespace Devolfer.Soma
                                                             Ease ease = Ease.Linear,
                                                             CancellationToken cancellationToken = default)
         {
-            return Instance.FadeMixerGroupVolumeAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.FadeMixerGroupVolumeAsync_Internal(
                 exposedParameter,
                 targetVolume,
                 duration,
@@ -1830,7 +1887,9 @@ namespace Devolfer.Soma
                                                       float duration,
                                                       Action onComplete = null)
         {
-            return Instance.CrossFadeMixerGroupVolumes_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return false;
+
+            return s_instance.CrossFadeMixerGroupVolumes_Internal(
                 fadeOutExposedParameter,
                 fadeInExposedParameter,
                 duration,
@@ -1849,7 +1908,9 @@ namespace Devolfer.Soma
                                                                   float duration,
                                                                   CancellationToken cancellationToken = default)
         {
-            return Instance.CrossFadeMixerGroupVolumesAsync_Internal(
+            if (!TryGetInstance(out s_instance) || !s_setupSoma) return default;
+
+            return s_instance.CrossFadeMixerGroupVolumesAsync_Internal(
                 fadeOutExposedParameter,
                 fadeInExposedParameter,
                 duration,
@@ -1859,8 +1920,6 @@ namespace Devolfer.Soma
         private void RegisterMixerVolumeGroup_Internal(SomaVolumeMixerGroup group)
         {
             if (group == null) return;
-
-            SetupIfNeeded();
 
             string exposedParameter = group.ExposedParameter;
 
@@ -1895,8 +1954,6 @@ namespace Devolfer.Soma
         private void UnregisterMixerVolumeGroup_Internal(SomaVolumeMixerGroup group)
         {
             if (group == null) return;
-
-            SetupIfNeeded();
 
             _mixerVolumeGroups.Remove(group.ExposedParameter);
         }
@@ -2105,8 +2162,6 @@ namespace Devolfer.Soma
 
         private bool MixerVolumeGroupRegistered(string exposedParameter, out SomaVolumeMixerGroup somaVolumeMixerGroup)
         {
-            SetupIfNeeded();
-
             if (_mixerVolumeGroups.TryGetValue(exposedParameter, out somaVolumeMixerGroup)) return true;
 
             Debug.LogError($"There is no {nameof(SomaVolumeMixerGroup)} for {exposedParameter} registered.");
@@ -2115,8 +2170,6 @@ namespace Devolfer.Soma
 
         private void CancelCurrentMixerFading(string exposedParameter)
         {
-            SetupIfNeeded();
-
 #if !UNITASK_INCLUDED
             if (_mixerFadeRoutines.Remove(exposedParameter, out Coroutine fadeRoutine))
             {

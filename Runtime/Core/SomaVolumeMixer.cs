@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Devolfer.Soma
 {
@@ -15,17 +13,9 @@ namespace Devolfer.Soma
         [Space]
         [SerializeField] private FadeConfiguration _fadeConfiguration;
 
-        private bool _registered;
-
-        private void Awake()
-        {
-            RegisterIfNeeded();
-        }
-
-        private void OnDestroy()
-        {
-            UnregisterIfNeeded();
-        }
+        private bool _hasRegistered;
+        
+        private void OnDestroy() => LazyUnregister();
 
         /// <summary>
         /// Sets volume of set <see cref="SomaVolumeMixerGroup"/> with <see cref="Soma"/>.
@@ -33,7 +23,7 @@ namespace Devolfer.Soma
         /// <param name="volume">The volumes' new value.</param>
         public void Set(float volume)
         {
-            RegisterIfNeeded();
+            LazyRegister();
 
             Soma.SetMixerGroupVolume(_group.ExposedParameter, volume);
         }
@@ -43,7 +33,7 @@ namespace Devolfer.Soma
         /// </summary>
         public void Increase()
         {
-            RegisterIfNeeded();
+            LazyRegister();
 
             Soma.IncreaseMixerGroupVolume(_group.ExposedParameter);
         }
@@ -53,7 +43,7 @@ namespace Devolfer.Soma
         /// </summary>
         public void Decrease()
         {
-            RegisterIfNeeded();
+            LazyRegister();
 
             Soma.DecreaseMixerGroupVolume(_group.ExposedParameter);
         }
@@ -64,7 +54,7 @@ namespace Devolfer.Soma
         /// <param name="muted">True = muted, False = unmuted.</param>
         public void Mute(bool muted)
         {
-            RegisterIfNeeded();
+            LazyRegister();
 
             Soma.MuteMixerGroupVolume(_group.ExposedParameter, muted);
         }
@@ -75,7 +65,7 @@ namespace Devolfer.Soma
         /// <param name="targetVolume">The target volume reached at the end of the fade.</param>
         public void Fade(float targetVolume)
         {
-            RegisterIfNeeded();
+            LazyRegister();
 
             Soma.FadeMixerGroupVolume(
                 _group.ExposedParameter,
@@ -85,18 +75,19 @@ namespace Devolfer.Soma
                 onComplete: _fadeConfiguration.OnComplete.Invoke);
         }
 
-        private void RegisterIfNeeded()
+        private void LazyRegister()
         {
-            if (_registered) return;
+            if (_hasRegistered) return;
 
-            _registered = true;
+            _hasRegistered = true;
             Soma.RegisterMixerVolumeGroup(_group);
         }
 
-        private void UnregisterIfNeeded()
+        private void LazyUnregister()
         {
-            if (!_registered) return;
+            if (!_hasRegistered) return;
 
+            _hasRegistered = false;
             Soma.UnregisterMixerVolumeGroup(_group);
         }
     }

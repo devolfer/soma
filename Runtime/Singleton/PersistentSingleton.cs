@@ -2,22 +2,72 @@ using UnityEngine;
 
 namespace Devolfer.Soma
 {
-    public class PersistentSingleton<T> : Singleton<T> where T : Component
+    public class PersistentSingleton<T> : MonoBehaviour where T : Component
     {
-        protected override void Setup()
+        internal static bool HasInstance => s_instance != null;
+        internal static bool HasSetup;
+        internal static bool MarkedForDestruction;
+
+        internal static bool TryGetInstance(out T instance)
         {
-            transform.SetParent(null);
+            instance = Instance;
 
-            if (s_instance != null)
-            {
-                if (s_instance != this) Destroy(gameObject);
-            }
-            else
-            {
-                base.Setup();
+            return HasInstance && HasSetup && !MarkedForDestruction;
+        } 
 
-                DontDestroyOnLoad(gameObject);
+        private static T Instance
+        {
+            get
+            {
+                if (MarkedForDestruction) return null;
+                
+                if (HasInstance && HasSetup) return s_instance;
+
+                s_instance = FindAnyObjectByType<T>();
+
+                if (!HasInstance) s_instance = new GameObject($"{typeof(T).Name}").AddComponent<T>();
+
+                HasSetup = DoSetup(s_instance.transform, s_instance.gameObject);
+                
+                return HasSetup ? s_instance : s_instance = null;
             }
+        }
+
+        private static T s_instance;
+
+        protected virtual void Awake() => LazySetup();
+
+        protected virtual void OnDestroy()
+        {
+            if (s_instance != this) return;
+            
+            MarkedForDestruction = true;
+        }
+
+        protected virtual void LazySetup()
+        {
+            if (!Application.isPlaying) return;
+
+            if (HasInstance && s_instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (HasSetup) return;
+            
+            HasSetup = DoSetup(transform, gameObject);
+            if (HasSetup) s_instance = this as T;
+        }
+
+        private static bool DoSetup(Transform t, GameObject go)
+        {
+            if (!Application.isPlaying) return false;
+            
+            t.SetParent(null);
+            DontDestroyOnLoad(go);
+            
+            return true;
         }
     }
 }

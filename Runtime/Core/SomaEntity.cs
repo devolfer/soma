@@ -125,19 +125,29 @@ namespace Devolfer.Soma
             _setup = true;
         }
 
+        internal void Cleanup()
+        {
+            if (!_setup) return;
+
+            TaskHelper.Cancel(ref _playCts);
+            TaskHelper.Cancel(ref _fadeCts);
+            TaskHelper.Cancel(ref _stopCts);
+
+#if !UNITASK_INCLUDED
+            if (_playRoutine != null) _manager.StopCoroutine(_playRoutine);
+            if (_fadeRoutine != null) _manager.StopCoroutine(_fadeRoutine);
+            if (_stopRoutine != null) _manager.StopCoroutine(_stopRoutine);
+#endif
+
+            _setup = false;
+        }
+
         internal void ProcessTargetFollowing()
         {
             if (!_setup) return;
             if (!_hasFollowTarget) return;
 
             _transform.position = _followTarget.TransformPoint(_followTargetOffset);
-        }
-
-        private void OnDestroy()
-        {
-            TaskHelper.Cancel(ref _playCts);
-            TaskHelper.Cancel(ref _fadeCts);
-            TaskHelper.Cancel(ref _stopCts);
         }
 
         internal SomaEntity Play(SomaProperties properties,
@@ -170,7 +180,7 @@ namespace Devolfer.Soma
                     properties.Volume,
                     easeFunction,
                     onComplete));
-            
+
             return this;
 #endif
         }
@@ -516,7 +526,7 @@ namespace Devolfer.Soma
                     fadeInTargetVolume,
                     fadeInEaseFunction,
                     PausedPredicate,
-                    cancellationToken: cancellationToken);
+                    cancellationToken);
             }
 
             await UniTask.WaitWhile(() => Playing || Paused, cancellationToken: cancellationToken);
