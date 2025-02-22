@@ -1,22 +1,9 @@
-using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Devolfer.Soma
 {
-    internal static class TaskHelper
+    internal static class TokenHelper
     {
-        internal static async Task WaitWhile(Func<bool> waitWhilePredicate,
-                                             CancellationToken cancellationToken = default)
-        {
-            while (waitWhilePredicate())
-            {
-                if (cancellationToken.IsCancellationRequested) return;
-
-                await Task.Yield();
-            }
-        }
-
         internal static CancellationTokenSource Link(ref CancellationToken externalCancellationToken,
                                                      ref CancellationTokenSource cancellationTokenSource)
         {

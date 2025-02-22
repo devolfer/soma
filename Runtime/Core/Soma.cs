@@ -1324,25 +1324,22 @@ namespace Devolfer.Soma
 
             while (deltaTime < duration)
             {
+                if (cancellationToken.IsCancellationRequested) return;
+                
+                if (waitWhilePredicate != null)
+                {
+                    while (waitWhilePredicate())
+                    {
+                        if (cancellationToken.IsCancellationRequested) return;
+                        
+                        await DynamicTask.Yield();
+                    }
+                }
+                
                 deltaTime += Time.deltaTime;
                 audioSource.volume = Mathf.Lerp(startVolume, targetVolume, easeFunction(deltaTime / duration));
-
-                if (waitWhilePredicate != default)
-                {
-#if UNITASK_INCLUDED
-                    await UniTask.WaitWhile(waitWhilePredicate, cancellationToken: cancellationToken);
-#else
-                    await TaskHelper.WaitWhile(waitWhilePredicate, cancellationToken);
-#endif
-                }
-                else
-                {
-#if UNITASK_INCLUDED
-                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: cancellationToken);
-#else
-                    await Task.Yield();
-#endif
-                }
+                
+                await DynamicTask.Yield();
             }
 
             audioSource.volume = targetVolume;
@@ -2055,7 +2052,7 @@ namespace Devolfer.Soma
             CancelCurrentMixerFading(exposedParameter);
 
             CancellationTokenSource cts = new();
-            TaskHelper.Link(ref cancellationToken, ref cts);
+            TokenHelper.Link(ref cancellationToken, ref cts);
 
             _mixerFadeCancellationTokenSources.TryAdd(exposedParameter, cts);
 
@@ -2147,14 +2144,12 @@ namespace Devolfer.Soma
 
             while (deltaTime < duration)
             {
+                if (cancellationToken.IsCancellationRequested) return;
+                
                 deltaTime += Time.deltaTime;
                 somaVolumeMixerGroup.Set(Mathf.Lerp(startVolume, targetVolume, easeFunction(deltaTime / duration)));
 
-#if UNITASK_INCLUDED
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: cancellationToken);
-#else
-                await Task.Yield();
-#endif
+                await DynamicTask.Yield();
             }
 
             somaVolumeMixerGroup.Set(targetVolume);
@@ -2179,7 +2174,7 @@ namespace Devolfer.Soma
 
             if (_mixerFadeCancellationTokenSources.Remove(exposedParameter, out CancellationTokenSource cts))
             {
-                TaskHelper.Cancel(ref cts);
+                TokenHelper.Cancel(ref cts);
             }
         }
 

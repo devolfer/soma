@@ -129,9 +129,9 @@ namespace Devolfer.Soma
         {
             if (!_setup) return;
 
-            TaskHelper.Cancel(ref _playCts);
-            TaskHelper.Cancel(ref _fadeCts);
-            TaskHelper.Cancel(ref _stopCts);
+            TokenHelper.Cancel(ref _playCts);
+            TokenHelper.Cancel(ref _fadeCts);
+            TokenHelper.Cancel(ref _stopCts);
 
 #if !UNITASK_INCLUDED
             if (_playRoutine != null) _manager.StopCoroutine(_playRoutine);
@@ -166,7 +166,7 @@ namespace Devolfer.Soma
                     fadeInDuration,
                     properties.Volume,
                     easeFunction,
-                    TaskHelper.CancelAndRefresh(ref _playCts),
+                    TokenHelper.CancelAndRefresh(ref _playCts),
                     onComplete)
                 .Forget();
 
@@ -214,12 +214,12 @@ namespace Devolfer.Soma
         {
             if (cancellationToken == default)
             {
-                cancellationToken = TaskHelper.CancelAndRefresh(ref _playCts);
+                cancellationToken = TokenHelper.CancelAndRefresh(ref _playCts);
             }
             else
             {
-                TaskHelper.CancelAndRefresh(ref _playCts);
-                TaskHelper.Link(ref cancellationToken, ref _playCts);
+                TokenHelper.CancelAndRefresh(ref _playCts);
+                TokenHelper.Link(ref cancellationToken, ref _playCts);
             }
 
             SetProperties(properties, followTarget, position);
@@ -240,11 +240,12 @@ namespace Devolfer.Soma
                     cancellationToken);
             }
 
-#if UNITASK_INCLUDED
-            await UniTask.WaitWhile(SourceIsPlayingOrPausedPredicate, cancellationToken: cancellationToken);
-#else
-            await TaskHelper.WaitWhile(SourceIsPlayingOrPausedPredicate, cancellationToken: cancellationToken);
-#endif
+            while (SourceIsPlayingOrPausedPredicate())
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+            
+                await DynamicTask.Yield();
+            }
 
             await _manager.StopAsync_Internal(this, false, 0, null, cancellationToken);
 
@@ -301,7 +302,7 @@ namespace Devolfer.Soma
             if (Stopping && fadeOut) return;
 
 #if UNITASK_INCLUDED
-            TaskHelper.Cancel(ref _stopCts);
+            TokenHelper.Cancel(ref _stopCts);
             Stopping = false;
 #else
             if (_stopRoutine != null) _manager.StopCoroutine(_stopRoutine);
@@ -312,7 +313,7 @@ namespace Devolfer.Soma
             {
                 Playing = false;
 #if UNITASK_INCLUDED
-                TaskHelper.Cancel(ref _playCts);
+                TokenHelper.Cancel(ref _playCts);
 #else
                 if (_playRoutine != null) _manager.StopCoroutine(_playRoutine);
                 _playRoutine = null;
@@ -323,7 +324,7 @@ namespace Devolfer.Soma
             {
                 Fading = false;
 #if UNITASK_INCLUDED
-                TaskHelper.Cancel(ref _fadeCts);
+                TokenHelper.Cancel(ref _fadeCts);
 #else
                 if (_fadeRoutine != null) _manager.StopCoroutine(_fadeRoutine);
                 _fadeRoutine = null;
@@ -340,7 +341,7 @@ namespace Devolfer.Soma
             else
             {
 #if UNITASK_INCLUDED
-                StopUniTask(fadeOutDuration, easeFunction, TaskHelper.CancelAndRefresh(ref _stopCts), onComplete)
+                StopUniTask(fadeOutDuration, easeFunction, TokenHelper.CancelAndRefresh(ref _stopCts), onComplete)
                     .Forget();
 #else
                 _stopRoutine = _manager.StartCoroutine(StopRoutine(fadeOutDuration, easeFunction, onComplete));
@@ -355,7 +356,7 @@ namespace Devolfer.Soma
         {
             if (Stopping && fadeOut) return;
 
-            TaskHelper.Cancel(ref _stopCts);
+            TokenHelper.Cancel(ref _stopCts);
             Stopping = false;
 #if !UNITASK_INCLUDED
             if (_stopRoutine != null) _manager.StopCoroutine(_stopRoutine);
@@ -365,7 +366,7 @@ namespace Devolfer.Soma
             if (Playing)
             {
                 Playing = false;
-                TaskHelper.Cancel(ref _playCts);
+                TokenHelper.Cancel(ref _playCts);
 #if !UNITASK_INCLUDED
                 if (_playRoutine != null) _manager.StopCoroutine(_playRoutine);
                 _playRoutine = null;
@@ -375,7 +376,7 @@ namespace Devolfer.Soma
             if (Fading)
             {
                 Fading = false;
-                TaskHelper.Cancel(ref _fadeCts);
+                TokenHelper.Cancel(ref _fadeCts);
 #if !UNITASK_INCLUDED
                 if (_fadeRoutine != null) _manager.StopCoroutine(_fadeRoutine);
                 _fadeRoutine = null;
@@ -391,12 +392,12 @@ namespace Devolfer.Soma
             {
                 if (cancellationToken == default)
                 {
-                    cancellationToken = TaskHelper.CancelAndRefresh(ref _stopCts);
+                    cancellationToken = TokenHelper.CancelAndRefresh(ref _stopCts);
                 }
                 else
                 {
-                    TaskHelper.CancelAndRefresh(ref _stopCts);
-                    TaskHelper.Link(ref cancellationToken, ref _stopCts);
+                    TokenHelper.CancelAndRefresh(ref _stopCts);
+                    TokenHelper.Link(ref cancellationToken, ref _stopCts);
                 }
 
                 Stopping = true;
@@ -424,7 +425,7 @@ namespace Devolfer.Soma
             {
                 Fading = false;
 #if UNITASK_INCLUDED
-                TaskHelper.Cancel(ref _fadeCts);
+                TokenHelper.Cancel(ref _fadeCts);
 #else
                 if (_fadeRoutine != null) _manager.StopCoroutine(_fadeRoutine);
                 _fadeRoutine = null;
@@ -432,7 +433,7 @@ namespace Devolfer.Soma
             }
 
 #if UNITASK_INCLUDED
-            FadeUniTask(targetVolume, duration, easeFunction, TaskHelper.CancelAndRefresh(ref _fadeCts), onComplete)
+            FadeUniTask(targetVolume, duration, easeFunction, TokenHelper.CancelAndRefresh(ref _fadeCts), onComplete)
                 .Forget();
 #else
             _fadeRoutine = _manager.StartCoroutine(FadeRoutine(targetVolume, duration, easeFunction, onComplete));
@@ -446,12 +447,12 @@ namespace Devolfer.Soma
         {
             if (cancellationToken == default)
             {
-                cancellationToken = TaskHelper.CancelAndRefresh(ref _fadeCts);
+                cancellationToken = TokenHelper.CancelAndRefresh(ref _fadeCts);
             }
             else
             {
-                TaskHelper.CancelAndRefresh(ref _fadeCts);
-                TaskHelper.Link(ref cancellationToken, ref _fadeCts);
+                TokenHelper.CancelAndRefresh(ref _fadeCts);
+                TokenHelper.Link(ref cancellationToken, ref _fadeCts);
             }
 
             Fading = true;
@@ -529,7 +530,12 @@ namespace Devolfer.Soma
                     cancellationToken);
             }
 
-            await UniTask.WaitWhile(() => Playing || Paused, cancellationToken: cancellationToken);
+            while (Playing || Paused)
+            {
+                if (cancellationToken.IsCancellationRequested) return;
+
+                await UniTask.Yield();
+            }
 
             onComplete?.Invoke();
 
